@@ -1,0 +1,1132 @@
+{% load staticfiles %}
+            <form action="" method="POST" role="form" id="agregar_acta_form" name="agregar_acta_form">
+            {% csrf_token %}
+                <div id="agregar_acta_body" class="container">
+                    <!-- Mensajes de éxito y error -->
+                    {% if success%}
+                        <div class="alert alert-success alert-dismissible" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+                            Acta editada exitósamente. <a href="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/calendario_actas/" class="alert-link">Haga click aquí para ir al calendario de actas.</a>
+                        </div>
+                    {% endif %}
+
+                    {% if errorAgregar %}
+                        <div class="alert alert-danger alert-dismissible" role="alert">
+                            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+                            Error al agregar el acta. <a href="javascript: void(0);" class="alert-link">Ocurrió un error al editar el acta, por favor intente nuevamente.</a>
+                        </div>
+                    {% endif %}
+                    <div class="block-header">
+                        <h2>Agregar acta</h2>
+
+                        <ul class="actions">
+                            <li>
+                                <a class="icon-pop" data-toggle="tooltip" data-placement="top" title="Ir a Tablero Kanban" href="../kanban">
+                                    <i class="md md-view-week"></i>
+                                </a>
+                            </li>
+                            <li>
+                                <a class="icon-pop" data-toggle="tooltip" data-placement="top" title="Guardar Acta" href="javascript: submit=true; $('#agregar_acta_form').submit();" id="guardar_acta">
+                                    <i class="md md-save"></i>
+                                </a>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="row">
+                        <div class="col-xs-12 col-sm-6">
+                        <div class="card">
+                            <div class="card-header bgm-lightblue"><h2><a id="detalles_acta_box" class="collapse-trigger" href="#detalles-acta-body" data-toggle="collapse"><i class="md md-expand-more"></i>Detalles</a></h2></div>
+                                <div class="card-body card-padding collapse in" id="detalles-acta-body">
+                                    <div class="row">
+                                        <div class="col-sm-12 m-b-10">
+                                            <div class="form-group fg-line">
+                                                <label>Fecha</label>
+                                                <input id="agregar_acta_fecha" name="agregar_acta_fecha" type="text" class="form-control input-mask" data-mask="00/00/0000" placeholder="ej: 23/05/2014" maxlength="10" autocomplete="off">
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-12 m-b-20">
+                                            <p class="f-500 m-b-10 c-black">Asistentes</p>
+
+                                             <select id="agregar_acta_miembros_presentes" name="agregar_acta_miembros_presentes" class="selectpicker" multiple data-size="5" >
+                                                {% for user_proyecto in usuarios_proyecto %}
+                                                    {% if user.id == user_proyecto.usuario.user.id %}
+                                                        <option selected disabled value="{{ user_proyecto.usuario.id }}">{{ user_proyecto.usuario.user.first_name }} {{ user_proyecto.usuario.user.last_name }}</option>
+                                                    {% else %}
+                                                        <option value="{{ user_proyecto.usuario.id }}">{{ user_proyecto.usuario.user.first_name }} {{ user_proyecto.usuario.user.last_name }}</option>
+                                                    {% endif %}
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-sm-12">
+                                            <h4>Resumen de la reunión</h4>
+                                            <div class="fg-line">
+                                                <textarea rows="5" id="agregar_acta_resumen" name="agregar_acta_resumen" maxlength="600" class="form-control auto-size" placeholder="Ingrese ..."></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="col-xs-12 col-sm-6">
+                            <div class="card">
+                                <div class="card-header bgm-red">
+                                    <h2><a class="collapse-trigger" href="#compromisos-pendientes-body" data-toggle="collapse"><i class="md md-expand-more"></i> Compromisos pendientes</a>
+                                        <small>
+                                            Aquí se listan todos los compromisos no finalizados del proyecto
+                                        </small>
+                                    </h2>
+                                    <!--<a data-toggle="modal" href="#moda-compromisos_pendientes" class="btn bgm-orange btn-float waves-effect waves-button waves-float"><i class="md md-add"></i></a>-->
+                                </div>
+                                <div class="card-body collapse in" id="compromisos-pendientes-body">
+                                    {% if compromisos_pendientes %}
+                                        <table class="table table-inner table-vmiddle">
+                                            <thead>
+                                                <tr>
+                                                    <th>#</th>
+                                                    <th>Nombre</th>
+                                                    <th>Estado</th>
+                                                    <th style="width: 40px">Fecha Inicio</th>
+                                                    <th style="width: 40px">Fecha Término</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            <script>
+                                                var numeracion_elemento_temp = 0;
+                                            </script>
+                                            {% for acta in proyecto.acta_set.all%}
+                                                {% for tema in acta.tema_set.all %}
+                                                    {% for elemento in tema.elemento_set.all %}
+                                                        <script>numeracion_elemento_temp++;</script>
+                                                        {% if elemento.tipo_elemento == "Compromiso" and elemento.estado_elemento != "Completado" %}
+                                                            <tr>
+                                                                <td class="f-500">{{ forloop.parentloop.parentloop.counter }}.<script>document.write(numeracion_elemento_temp);</script></td>
+                                                                <td class="f-500"><strong>{{ elemento.titulo_elemento }}</strong></td>
+                                                                <td><strong>{{ elemento.estado_elemento }}</strong></td>
+                                                                <td class="f-500">{{ elemento.fecha_inicio|date:"d/m/Y" }}</td>
+                                                                <td class="f-500">{{ elemento.fecha_termino|date:"d/m/Y" }}</td>
+                                                            </tr>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            {% endfor %}
+
+                                            </tbody>
+                                        </table>
+                                    {% else %}
+                                    <h3 style="color: #4CAF50; text-align: center;">No tiene compromisos pendientes <i class="md md-check"></i></h3>
+                                    <br>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+
+
+                        <div class="col-xs-12 col-sm-12">
+                            <div class="card">
+                                <div class="card-header bgm-lightblue">
+                                    <h2>Temas</h2>
+                                    <a data-toggle="modal" href="#modal-agregar-tema" class="btn bgm-orange btn-float waves-effect waves-button waves-float"><i class="md md-add"></i></a>
+                                </div>
+                                <div id="tablero_temas" name="tablero_temas" class="card-body card-padding">
+
+                                    <!-- Temas añadidos -->
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <!--
+                    <div class="row">
+                        <div class="col-xs-12 text-right">
+                            <button class="btn bgm-blue waves-effect waves-button waves-float">Guardar <i class="md md-lg md-save"></i></button>
+                        </div>
+                    </div>
+                    -->
+                </div>
+
+
+                <input type="hidden" id="cantidad_total_temas" name="cantidad_total_temas" value="0"/>
+                <!-- Modales de Agregar Tema y Agregar Elemento -->
+                <div class="modal fade" id="modal-agregar-tema" name="modal-agregar-tema">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Agregar tema</h4>
+                            </div>
+                            <div class="modal-body">
+                                    <div class="row">
+                                        <div class="col-xs-12 m-b-10">
+                                            <div class="form-group fg-float">
+                                                <div class="fg-line">
+                                                    <input id="nombre_tema" maxlength="50" type="text" class="form-control fg-input">
+                                                </div>
+                                                <label class="fg-label">Nombre del tema</label>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-sm-12">
+                                            <h5>Discusión</h5>
+                                            <div class="fg-line">
+                                                <div id="descripcion_tema" class="summernote" ></div>
+                                            </div>
+                                        </div>
+                                    </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-link waves-effect" data-dismiss="modal" onclick="javascript: $('.note-editable').text('');">Cancelar</button>
+                                <button type="button" id="agregar_tema" name="agregar_tema" class="btn bgm-blue waves-effect">Agregar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="modal-agregar-elemento" name="modal-agregar-elemento">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Agregar elemento dialógico</h4>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-sm-6 m-b-20">
+                                        <p class="f-500 m-b-10 c-black">Tipo de elemento</p>
+
+                                        <select class="selectpicker" id="tipo_elemento">
+                                            <option value="Compromiso">Compromiso</option>
+                                            <option value="Acuerdo">Acuerdo</option>
+                                            <option value="Desacuerdo">Desacuerdo</option>
+                                            <option value="Duda">Duda</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-6 m-b-10">
+                                        <p class="f-500 m-b-10 c-black">Estado</p>
+
+                                        <select class="selectpicker" id="estado_elemento">
+
+                                            <!-- Estados compromisos -->
+                                            <option name="estado_compromiso">Pendiente por asignar</option>
+                                            <option name="estado_compromiso" data-subtext="No ha empezado a realizarlo">Asignado</option>
+                                            <option name="estado_compromiso" data-subtext="Asignado y se está realizando">En curso</option>
+                                            <option name="estado_compromiso">Completado</option>
+                                            <option name="estado_compromiso">Eliminado</option>
+
+                                            <!-- Estados acuerdos y desacuerdos -->
+                                            <option name="estado_acuerdo" style="display:none;">Vigente</option>
+                                            <option name="estado_acuerdo" style="display:none;">Eliminado</option>
+
+                                            <!-- Estados dudas -->
+                                            <option name="estado_duda" style="display:none;">Pendiente</option>
+                                            <option name="estado_duda" style="display:none;">Resuelta</option>
+                                            <option name="estado_duda" style="display:none;">Eliminada</option>
+
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row" id="usuario_responsable_compromiso" style="display:none;">
+                                    <div class="col-sm-12 m-b-20">
+                                        <p class="f-500 m-b-10 c-black">Persona asignada</p>
+                                        <select class="selectpicker" id="responsable_elemento" data-size="5">
+                                            {% for user_proyecto in usuarios_proyecto %}
+                                                <option value="{{ user_proyecto.usuario.id }}">{{ user_proyecto.usuario.user.first_name }} {{ user_proyecto.usuario.user.last_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-12 m-b-20">
+                                        <h5>Nombre</h5>
+                                        <div class="fg-line">
+                                            <textarea class="form-control auto-size" placeholder="Ingrese nombre" id="nombre_elemento" maxlength="50"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-12 m-b-20">
+                                        <h5>Descripción</h5>
+                                        <div class="fg-line">
+                                            <textarea rows="5" maxlength="600" class="form-control" placeholder="Ingrese ..." id="descripcion_elemento"></textarea>
+                                            <!--<textarea rows="5" maxlength="600" id="descripcion_elemento" class="summernote"></textarea>-->
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-6 m-b-10">
+                                        <div class="form-group fg-line">
+                                            <label>Fecha Inicio</label>
+                                            <input name="fecha_inicio" id="fecha_inicio" type="text" class="form-control input-mask" data-mask="00/00/0000" placeholder="ej: 23/05/2014" maxlength="10" autocomplete="off">
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 m-b-10">
+                                        <div class="form-group fg-line">
+                                            <label>Fecha Término</label>
+                                            <input name="fecha_termino" id="fecha_termino" type="text" class="form-control input-mask" data-mask="00/00/0000" placeholder="ej:01/06/2014" maxlength="10" autocomplete="off">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-12 m-b-20">
+                                        <p class="f-500 m-b-10 c-black">Definir elemento que lo genera</p>
+                                        <select class="selectpicker" id="elemento_padre" data-size="5" data-live-search="true">
+                                            <option value="">NO TIENE</option>
+                                            {% for actas in proyecto.acta_set.all %}
+                                                {% for temas in actas.tema_set.all %}
+                                                    {% for elemento in temas.elemento_set.all %}
+                                                        {% if elemento.titulo_elemento|length < 80 %}
+                                                            <option value="{{ elemento.id }}">{{ elemento.titulo_elemento }}</option>
+                                                        {% else %}
+                                                            <option value="{{ elemento.id }}">{{ elemento.titulo_elemento|truncatechars:80 }}</option>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-link waves-effect" data-dismiss="modal">Cancelar</button>
+                                <button type="button" id="agregar_elemento" class="btn bgm-blue waves-effect">Agregar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="modal-ver-elemento" name="modal-ver-elemento">
+                    <input type="hidden" value="" id="elemento_a_editar" name="elemento_a_editar">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Ver Elemento</h4>
+                            </div>
+                            <div class="modal-body">
+                                <div class="row">
+                                    <div class="col-sm-6 m-b-20">
+                                        <p class="f-500 m-b-10 c-black">Tipo de elemento</p>
+
+                                        <select class="selectpicker" id="ver_elemento_tipo">
+                                            <option value="Compromiso">Compromiso</option>
+                                            <option value="Acuerdo">Acuerdo</option>
+                                            <option value="Desacuerdo">Desacuerdo</option>
+                                            <option value="Duda">Duda</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-6 m-b-10">
+                                        <p class="f-500 m-b-10 c-black">Estado</p>
+
+                                        <select class="selectpicker" id="ver_elemento_estado">
+                                        </select>
+                                    </div>
+                                </div>
+                                <div class="row" id="ver_elemento_usuario_responsable_compromiso">
+                                    <div class="col-sm-12 m-b-20">
+                                        <p class="f-500 m-b-10 c-black">Responsable</p>
+                                        <select class="selectpicker" id="ver_elemento_responsable" data-size="5">
+                                            {% for user_proyecto in usuarios_proyecto %}
+                                                <option value="{{ user_proyecto.usuario.id }}">{{ user_proyecto.usuario.user.first_name }} {{ user_proyecto.usuario.user.last_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-12 m-b-20">
+                                        <h5>Nombre</h5>
+                                        <div class="fg-line">
+                                            <textarea maxlength="50" class="form-control auto-size" placeholder="Ingrese nombre" id="ver_elemento_nombre"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-12 m-b-20">
+                                        <h5>Descripción</h5>
+                                        <div class="fg-line">
+                                            <textarea rows="5" maxlength="600" class="form-control" placeholder="Ingrese ..." id="ver_elemento_descripcion"></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row">
+                                    <div class="col-sm-6 m-b-10">
+                                        <div class="form-group fg-line">
+                                            <label>Fecha Inicio</label>
+                                            <input name="fecha_inicio" id="ver_elemento_fecha_inicio" type="text" class="form-control input-mask" data-mask="00/00/0000" placeholder="ej: 23/05/2014" maxlength="10" autocomplete="off">
+                                        </div>
+                                    </div>
+                                    <div class="col-sm-6 m-b-10">
+                                        <div class="form-group fg-line">
+                                            <label>Fecha Término</label>
+                                            <input name="fecha_termino" id="ver_elemento_fecha_termino" type="text" class="form-control input-mask" data-mask="00/00/0000" placeholder="ej:01/06/2014" maxlength="10" autocomplete="off">
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-12 m-b-20">
+                                        <p class="f-500 m-b-10 c-black">Definir elemento que lo genera</p>
+                                        <select class="selectpicker" id="ver_elemento_padre" data-size="5" data-live-search="true">
+                                            <option value="">NO TIENE</option>
+                                            {% for actas in proyecto.acta_set.all %}
+                                                {% for temas in actas.tema_set.all %}
+                                                    {% for elemento in temas.elemento_set.all %}
+                                                        {% if elemento.titulo_elemento|length < 80 %}
+                                                            <option value="{{ elemento.id }}">{{ elemento.titulo_elemento }}</option>
+                                                        {% else %}
+                                                            <option value="{{ elemento.id }}">{{ elemento.titulo_elemento|truncatechars:80 }}</option>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endfor %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-link waves-effect" data-dismiss="modal">Cancelar</button>
+                                <button type="button" id="editar_elemento" class="btn bgm-blue waves-effect">Guardar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Modal para ver tema -->
+                <div class="modal fade" id="modal-ver-tema" name="modal-ver-tema">
+                    <div class="modal-dialog">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title">Ver tema</h4>
+                            </div>
+                            <div class="modal-body">
+                                <input type="hidden" id="tema_a_editar" name="tema_a_editar" value="">
+                                <div class="row">
+                                    <div class="col-sm-12 m-b-20">
+                                        <h5>Nombre</h5>
+                                        <div class="fg-line">
+                                            <input maxlength="50" class="form-control auto-size" placeholder="Ingrese..." id="ver_tema_nombre" name="ver_tema_nombre"/>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="row">
+                                    <div class="col-sm-12">
+                                        <h5>Discusión</h5>
+                                        <div class="fg-line">
+                                            <div id="ver_tema_descripcion" name="ver_tema_descripcion" class="summernote"></div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="modal-footer">
+                                <button type="button" class="btn btn-link waves-effect" data-dismiss="modal" onclick="javascript: $('.note-editable').text('');">Cancelar</button>
+                                <button type="button" id="editar_tema" name="editar_tema" class="btn bgm-blue waves-effect">Guardar</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </form>
+    <script type="text/javascript">
+        var cant_temas = 0;
+        var nombre_tema = '';
+        var descripcion_tema = '';
+        var modal_abierto = "";
+        var cant_elementos = 0;
+        var pagina_redirect = "";
+        var numero_actas = {{ cantidad_actas_proyecto }};
+        var cant_elementos_total = numeracion_elemento_temp; //Para numeración de los elementos
+
+        $(function () {
+            $('#agregar_acta_fecha').datetimepicker({
+                format: 'DD/MM/YYYY'
+            });
+            $('#fecha_inicio').datetimepicker({
+                format: 'DD/MM/YYYY'
+            });
+            $('#fecha_termino').datetimepicker({
+                format: 'DD/MM/YYYY'
+            });
+            $('#agregar_acta_fecha_inicio').datetimepicker({
+                format: 'DD/MM/YYYY'
+            });
+            $('#ver_elemento_fecha_termino').datetimepicker({
+                format: 'DD/MM/YYYY'
+            });
+        });
+        $(document).ready(function() {
+            $('.summernote').summernote({
+                height: 350,
+                toolbar: [
+                    ['font', ['bold', 'italic', 'underline', 'clear']],
+                    ['para', ['ul', 'ol']],
+                    ['insert', ['link', 'hr']]
+                ],
+                dialogsInBody: true
+            });
+            $("[data-hover='tooltip']").tooltip({'placement': 'top'});
+            //Agregamos un tema
+            $('#agregar_tema').on('click',function(data) {
+                cant_temas = cant_temas + 1;
+
+                //Variables del tema
+                nombre_tema = $('#nombre_tema').val();
+                //descripcion_tema = $('#descripcion_tema').val();
+                descripcion_tema = $('#descripcion_tema').code();
+
+                /*
+                * Agregamos el div del nuevo tema
+                * Se comienza añadiendo cant_elementos = 0. Cada vez que se agregue uno, se actualiza la cantidad.
+                * */
+                //El div id="tema..." tal vez puede sacarse
+                $('#tablero_temas').append(
+                    '<div class="row" id="tema_'+cant_temas+'">\
+                        <div id="tema_'+cant_temas+'" class="col-xs-10 col-sm-11">\
+                        <input type="hidden" id="cant_elementos_tema_'+cant_temas+'" name="cant_elementos" value="0"/>\
+                        <input type="hidden" id="tema_'+cant_temas+'_nombre" name="nombre_tema" value="'+nombre_tema+'"/>\
+                        <input type="hidden" id="tema_'+cant_temas+'_descripcion" name="descripcion_tema" value="'+descripcion_tema+'"/>\
+                            <div class="card">\
+                                <div class="card-header bgm-orange">\
+                                    <h2><a class="collapse-trigger" href="#tema-body-'+cant_temas+' " data-toggle="collapse"><i class="md md-expand-more"></i><span id="tema_'+cant_temas+'_nombre_mostrado">'+nombre_tema+'</span></a></h2>\
+                                    <hr>\
+                                    <i class="md md-comment"></i> <small id="tema_'+cant_temas+'_descripcion_mostrada">'+descripcion_tema+'</small>\
+                                    <ul class="actions">\
+                                        <li>\
+                                            <a data-toggle="modal" href="#modal-agregar-elemento" onClick="modalAbierto('+cant_temas+')">\
+                                                <i class="md md-add"></i>\
+                                            </a>\
+                                        </li>\
+                                        <li>\
+                                            <a data-toggle="modal" href="#modal-ver-tema" onClick="ver_tema('+cant_temas+')">\
+                                                <i class="md md-create"></i>\
+                                            </a>\
+                                        </li>\
+                                        <li>\
+                                            <a id="eliminar_tema_'+cant_temas+'" name="eliminar_tema" onClick="eliminar_tema('+cant_temas+')" >\
+                                                <i class="md md-delete"></i>\
+                                            </a>\
+                                        </li>\
+                                    </ul>\
+                                </div>\
+                                <input type="hidden" name="agregar_acta_temas" id="agregar_acta_temas_'+cant_temas+'">\
+                                <div id="tema-body-'+cant_temas+'" class="card-body collapse in">\
+                                    <div class="row">\
+                                        <div class="col-xs-12">\
+                                            <div class="listview lv-bordered" id="elementos_tema_'+cant_temas+'">\
+                                            </div>\
+                                        </div>\
+                                    </div>\
+                                </div>\
+                            </div>\
+                        </div>\
+                    </div>\
+                ');
+
+                //Actualizamos la cantidad de temas
+                $('#cantidad_total_temas').val( function( index, val ) {
+                    return +val+1;
+                });
+
+                $('#modal-agregar-tema').modal('hide').find('input, textarea').each(function(){
+                    $(this).val('');
+                    $('.note-editable').text('');
+                });
+            });
+
+            //Agregamos un tema
+            $('#agregar_elemento').on('click',function(data) {
+                var tema = modal_abierto;
+                var nombre = $('#nombre_elemento').val();
+                var descripcion = $('#descripcion_elemento').val();
+                var responsable_elemento = "None";
+                if($('#usuario_responsable_compromiso').is(':visible'))
+                    responsable_elemento = $('#responsable_elemento').val();
+                var tipo_elemento = $('#tipo_elemento').val();
+                var estado_elemento = $('#estado_elemento').val();
+                var fecha_inicio = $('#fecha_inicio').val();
+                var fecha_termino = $('#fecha_termino').val();
+                var padre_elemento = $('#elemento_padre').val();
+                //var tipo_elemento_nombre = $('#tipo_elemento_nombre option:selected').text();
+                //var estado_id = $('#estado_id').val();
+                //var estado_nombre = $('#estado_nombre option:selected').text();
+                //var responsable_nombre = $('#responsable_elemento option:selected').text();
+
+                var prefijo = "";
+                if(tipo_elemento === "Compromiso")
+                    prefijo = "CO";
+                if(tipo_elemento === "Duda")
+                    prefijo = "DU";
+                if(tipo_elemento === "Acuerdo")
+                    prefijo = "AC";
+                if(tipo_elemento === "Desacuerdo")
+                    prefijo = "DE";
+
+                /*
+                * Agregamos el elemento y sus datos como inputs hidden
+                * */
+
+                //Aumentamos cantidad de elementos del tema
+                $('#cant_elementos_tema_'+tema).val( function( index, val ) {
+                    cant_elementos++;
+                    return +val+1;
+                });
+
+                cant_elementos_total++;
+                var numeracion = $('#cant_elementos_tema_'+tema).val();
+                $('#elementos_tema_'+tema).append(
+                    '<div class="lv-item media" id="elemento_'+numeracion+'_tema_'+tema+'" name="elementos_del_tema">\
+                        <div class="media-body">\
+                            <div class="lv-title"><a href="#modal-ver-elemento" onClick="ver_elemento('+tema+', '+numeracion+', '+tema+'.'+numeracion+');"><strong>'+numero_actas+'.'+cant_elementos_total+' <span id="elemento_'+numeracion+'_tema_'+tema+'_prefijo">'+prefijo+'</span>: </strong><span id="elemento_'+numeracion+'_tema_'+tema+'_nombre_mostrado">'+nombre+'</span></a></div>\
+                            <input type="hidden" id="elemento_'+numeracion+'_tema_'+tema+'_nombre" name="nombre_elemento_hidden" value="'+nombre+'">\
+                            <input type="hidden" id="elemento_'+numeracion+'_tema_'+tema+'_descripcion" name="descripcion_elemento_hidden" value="'+descripcion+'">\
+                            <input type="hidden" id="elemento_'+numeracion+'_tema_'+tema+'_tipo" name="tipo_elemento_hidden" value="'+tipo_elemento+'">\
+                            <input type="hidden" id="elemento_'+numeracion+'_tema_'+tema+'_responsable" name="responsable_elemento_hidden" value="'+responsable_elemento+'">\
+                            <input type="hidden" id="elemento_'+numeracion+'_tema_'+tema+'_estado" name="estado_elemento_hidden" value="'+estado_elemento+'">\
+                            <input type="hidden" id="elemento_'+numeracion+'_tema_'+tema+'_fecha_inicio" name="fecha_inicio_hidden" value="'+fecha_inicio+'">\
+                            <input type="hidden" id="elemento_'+numeracion+'_tema_'+tema+'_fecha_termino" name="fecha_termino_hidden" value="'+fecha_termino+'">\
+                            <input type="hidden" id="elemento_'+numeracion+'_tema_'+tema+'_elemento_padre" name="elemento_padre_hidden" value="'+padre_elemento+'">\
+                            <div class="lv-actions actions">\
+                                <a data-toggle="dropdown" aria-expanded="true" onClick="eliminar_elemento('+numeracion+','+tema+')">\
+                                    <i class="md md-delete"></i>\
+                                </a>\
+                            </div>\
+                        </div>\
+                    </div>\
+                ');
+
+                /*
+                * Agregamos el nuevo elemento a la posible lista de elementos padres
+                * */
+
+                $('#elemento_padre').append($('<option>', {
+                    value: nombre,
+                    text: nombre
+                }));
+
+                $('#ver_elemento_padre').append($('<option>', {
+                    value: nombre,
+                    text: nombre
+                }));
+
+                $('#elemento_padre').selectpicker('refresh');
+                $('#ver_elemento_padre').selectpicker('refresh');
+                $('#modal-agregar-elemento').modal('hide').find('input, textarea').each(function(){
+                    $(this).val('');
+                });
+            });
+
+             //Reinicializamos inputs del modal
+            //$('#name2').val( $('#name2').prop('defaultSelected') );
+
+            //Cambiamos los estados del elemento dependiendo del tipo elemento escogido
+            $('#tipo_elemento').on('change',function(data) {
+                var estados_compromisos = '<option name="estado_compromiso">Pendiente por asignar</option>\
+                                            <option name="estado_compromiso" data-subtext="No ha empezado a realizarlo">Asignado</option>\
+                                            <option name="estado_compromiso" data-subtext="Asignado y se está realizando">En curso</option>\
+                                            <option name="estado_compromiso">Completado</option>\
+                                            <option name="estado_compromiso">Eliminado</option>';
+                var estados_acuerdos = '<option name="estado_acuerdo">Vigente<\/option>\
+                                        <option name="estado_acuerdo">Eliminado<\/option>';
+                var estados_dudas = '<option name="estado_duda">Pendiente</option>\
+                                    <option name="estado_duda">Resuelta</option>\
+                                    <option name="estado_duda">Eliminada</option>';
+                $('#estado_elemento').find('option').remove();
+                if($(this).val() == 'Compromiso'){
+                    $('#estado_elemento').append(estados_compromisos);
+                    //$('#usuario_responsable_compromiso').css('display','block');
+                }
+                if($(this).val() == 'Acuerdo' || $(this).val() == 'Desacuerdo') {
+                    $('#estado_elemento').append(estados_acuerdos);
+                    $('#usuario_responsable_compromiso').css('display','none');
+                }
+                if($(this).val() == 'Duda'){
+                    $('#estado_elemento').append(estados_dudas);
+                    $('#usuario_responsable_compromiso').css('display','none');
+                }
+                $('#estado_elemento').selectpicker('refresh');
+
+            });
+
+            //Para cambiar los estados y/o responsables del modal "Ver elemento"
+            $('#ver_elemento_tipo').on('change',function(data) {
+                var estados_compromisos = '<option name="estado_compromiso">Pendiente por asignar</option>\
+                                            <option name="estado_compromiso" data-subtext="No ha empezado a realizarlo">Asignado</option>\
+                                            <option name="estado_compromiso" data-subtext="Asignado y se está realizando">En curso</option>\
+                                            <option name="estado_compromiso">Completado</option>\
+                                            <option name="estado_compromiso">Eliminado</option>';
+                var estados_acuerdos = '<option name="estado_acuerdo">Vigente<\/option>\
+                                        <option name="estado_acuerdo">Eliminado<\/option>';
+                var estados_dudas = '<option name="estado_duda">Pendiente</option>\
+                                    <option name="estado_duda">Resuelta</option>\
+                                    <option name="estado_duda">Eliminada</option>';
+                $('#ver_elemento_estado').find('option').remove();
+                if($(this).val() == 'Compromiso'){
+                    $('#ver_elemento_estado').append(estados_compromisos);
+                    //$('#ver_elemento_usuario_responsable_compromiso').css('display','block');
+                }
+                if($(this).val() == 'Acuerdo' || $(this).val() == 'Desacuerdo') {
+                    $('#ver_elemento_estado').append(estados_acuerdos);
+                    $('#ver_elemento_usuario_responsable_compromiso').css('display','none');
+                }
+                if($(this).val() == 'Duda'){
+                    $('#ver_elemento_estado').append(estados_dudas);
+                    $('#ver_elemento_usuario_responsable_compromiso').css('display','none');
+                }
+                $('#ver_elemento_estado').selectpicker('refresh');
+
+            });
+
+            $('#estado_elemento').on('change',function(data) {
+                if($('#tipo_elemento').val() == "Compromiso") {
+                    if ($(this).val() == "Pendiente por asignar") {
+                        $('#usuario_responsable_compromiso').css('display', 'none');
+                    }
+                    else {
+                        $('#usuario_responsable_compromiso').css('display', 'block');
+                    }
+                }
+            });
+
+            $('#ver_elemento_estado').on('change',function(data) {
+                if($('#ver_elemento_tipo').val() == "Compromiso") {
+                    if ($(this).val() == "Pendiente por asignar") {
+                        $('#ver_elemento_usuario_responsable_compromiso').css('display', 'none');
+                    }
+                    else {
+                        $('#ver_elemento_usuario_responsable_compromiso').css('display', 'block');
+                    }
+                }
+            });
+
+
+            //Botón eliminar
+            /*
+            $('#eliminar_tema_1').on('click', function(){
+                swal({
+                    title: "¿Estás seguro?",
+                    text: "El tema se eliminará y deberás crearlo de nuevo.",
+                    type: "warning",
+                    showCancelButton: true,
+                    confirmButtonColor: "#DD6B55",
+                    confirmButtonText: "Sí, eliminar",
+                    cancelButtonText: "Cancelar",
+                    closeOnConfirm: false
+                }, function(){
+                    swal("!Tema eliminado¡", "El tema ha sido eliminado exitósamente.", "success");
+                });
+            });
+            */
+
+            $('.collapse-trigger').on('click',function(){
+                $(this).children('i.md').each(function(){
+                    if($(this).is('.md-expand-more'))
+                        $(this).removeClass('md-expand-more').addClass('md-expand-less');
+                    else
+                        $(this).removeClass('md-expand-less').addClass('md-expand-more');
+                });
+            });
+            $('.collapse-trigger').on('click',function(){
+                $(this).children('i.md').each(function(){
+                    if($(this).is('.md-expand-more'))
+                        $(this).removeClass('md-expand-more').addClass('md-expand-less');
+                    else
+                        $(this).removeClass('md-expand-less').addClass('md-expand-more');
+                });
+            });
+            /*$('body').on('click', '#agregar_proyecto', function(e){
+                //e.preventDefault();
+                $('#agregar_proyecto_modal').modal('show');
+
+                //$('#agregar_proyecto_modal input').val('');
+                $('#getStart').val(start);
+            });*/
+
+            //Se elimina informacion del modal al cerrarlo.
+            /*$('#agregar_proyecto_modal').on('hidden.bs.modal', function() {
+                $('#agregar_proyecto_form').bootstrapValidator('resetForm', true);
+            });*/
+
+            $('#agregar_proyecto_form').bootstrapValidator({
+                // To use feedback icons, ensure that you use Bootstrap v3.1.0 or later
+                /*container: 'tooltip',
+                excluded: ':disabled',
+                feedbackIcons: {
+                    valid: 'md md-check',
+                    invalid: 'md md-close',
+                    validating: 'glyphicon glyphicon-refresh'
+                },
+                fields: {
+                    agregar_proyecto_nombre: {
+                        trigger: 'blur',
+                        validators: {
+                            notEmpty: {
+                                message: 'Debe ingresar nombre del proyecto'
+                            },
+                            stringLength: {
+                                min: 5,
+                                message: 'El nombre del proyecto debe tener entre 5 y 50 caracteres'
+                            }
+                        }
+                    },
+                    agregar_proyecto_descripcion: {
+                        trigger: 'blur',
+                        validators: {
+                            notEmpty: {
+                                message: 'Debe ingresar descripción del proyecto'
+                            },
+                            stringLength: {
+                                min: 5,
+                                max: 30,
+                                message: 'La descripción debe tener entre entre 10 y 600 caracteres'
+                            }
+                        }
+                    },
+                    agregar_proyecto_fecha_inicio: {
+                        trigger: 'blur',
+                        validators: {
+                            notEmpty: {
+                                message: 'Debe ingresar fecha de inicio'
+                            },
+                            date: {
+                                format:'DD/MM/YYYY',
+                                message: 'Debe ingresar fecha de inicio'
+                            }
+                        }
+                    },
+                    agregar_proyecto_miembros: {
+                        validators: {
+                            callback: {
+                                message: 'Debe seleccionar al menos un miembro para su equipo',
+                                callback: function(value, validator, $field) {
+                                    // Get the selected options
+                                    var options = validator.getFieldElements('agregar_proyecto_miembros').val();
+                                    return (options != null);
+                                }
+                            }
+                        }
+                    }
+                }
+                */
+            });
+            /*$('#agregar_proyecto_fecha_inicio').on('dp.change dp.show', function(e) {
+                $('#agregar_proyecto_form').bootstrapValidator('revalidateField', 'agregar_proyecto_fecha_inicio');
+            });
+            */
+
+            $('#editar_tema').on('click', function(){
+
+                var nombre = $('#ver_tema_nombre').val();
+                var descripcion = $('#ver_tema_descripcion').code();
+                var tema_a_editar = $('#tema_a_editar').val();
+
+                //Editamos los input hidden del tema
+                $('#tema_'+tema_a_editar+'_nombre').val(nombre);
+                $('#tema_'+tema_a_editar+'_descripcion').val(descripcion);
+
+                //Editamos los datos mostrados
+                $('#tema_'+tema_a_editar+'_nombre_mostrado').text(nombre);
+                $('#tema_'+tema_a_editar+'_descripcion_mostrada').text(descripcion);
+
+                $('#modal-ver-tema').modal('hide').find('input, textarea').each(function(){
+                    $(this).val('');
+                })
+
+            });
+
+            $('#editar_elemento').on('click', function(){
+                var nombre = $('#ver_elemento_nombre').val();
+                var descripcion = $('#ver_elemento_descripcion').val();
+                var tipo = $('#ver_elemento_tipo').val();
+                var estado = $('#ver_elemento_estado').val();
+                var responsable = "None";
+                if(tipo == 'Compromiso') {
+                    responsable = document.getElementById('ver_elemento_responsable').value;
+                }
+                var fecha_inicio = $('#ver_elemento_fecha_inicio').val();
+                var fecha_termino = $('#ver_elemento_fecha_termino').val();
+                var padre = $('#ver_elemento_padre').val();
+                var elemento_a_editar = $('#elemento_a_editar').val();
+
+                //Editamos los input hidden del elemento con los valores ingresados
+                var nombre_elemento = $('#'+elemento_a_editar+'_nombre').val();
+                $('#'+elemento_a_editar+'_nombre_mostrado').text(nombre);
+                $('#'+elemento_a_editar+'_nombre').val(nombre);
+                $('#'+elemento_a_editar+'_descripcion').val(descripcion);
+                $('#'+elemento_a_editar+'_tipo').val(tipo);
+                $('#'+elemento_a_editar+'_estado').val(estado);
+                $('#'+elemento_a_editar+'_responsable').val(responsable);
+                $('#'+elemento_a_editar+'_fecha_inicio').val(fecha_inicio);
+                $('#'+elemento_a_editar+'_fecha_termino').val(fecha_termino);
+                $('#'+elemento_a_editar+'_elemento_padre').val(padre);
+
+                $('#ver_elemento_padre > option').each(function() {
+                    var nombre_select = $(this).text();
+                    if (nombre_select.toString() === nombre_elemento.toString()){
+                        $(this).val(nombre);
+                        $(this).text(nombre);
+                    }
+                });
+                var nombre_elemento_a_eliminar = "";
+                $('#elemento_padre > option').each(function() {
+                    var nombre_select = $(this).text();
+                    if (nombre_select.toString() === nombre_elemento.toString()){
+                        $(this).val(nombre);
+                        $(this).text(nombre);
+                    }
+                });
+
+                //Si se editó el nombre de un elemento que es padre, se edita el input hidden de dicho elemento.
+                $('div[name="padre_elemento_hidden"]').each(function(){
+                    if ($(this).val().toString() === nombre_elemento.toString()) {
+                        $(this).val(nombre);
+                    }
+                });
+
+                //Editamos el prefijo
+                var prefijo = "";
+                if(tipo === "Compromiso")
+                    prefijo = "CO";
+                if(tipo === "Duda")
+                    prefijo = "DU";
+                if(tipo === "Acuerdo")
+                    prefijo = "AC";
+                if(tipo === "Desacuerdo")
+                    prefijo = "DE";
+                $('#'+elemento_a_editar+'_prefijo').text(prefijo);
+                //Editamos el select
+                $('#ver_elemento_padre').selectpicker('refresh');
+                $('#elemento_padre').selectpicker('refresh');
+
+                $('#modal-ver-elemento').modal('hide').find('input, textarea').each(function(){
+                    $(this).val('');
+                });
+            });
+         });
+
+        function ver_tema(tema){
+            $('#ver_tema_nombre').val($('#tema_'+tema+'_nombre_mostrado').text());
+            //$('#ver_tema_descripcion').val($('#tema_'+tema+'_descripcion_mostrada').text());
+            $('#ver_tema_descripcion').code($('#tema_'+tema+'_descripcion_mostrada').code());
+            $('#tema_a_editar').val(tema);
+        }
+
+        function ver_elemento(tema, elemento, numeracion) {
+            var id_div_elemento = 'elemento_'+elemento+'_tema_'+tema;
+            //Definimos estados dependiendo del tipo elemento
+            var tipo_elemento = $('#'+id_div_elemento + '_tipo').val();
+            var estados_compromisos = '<option name="estado_compromiso">Pendiente por asignar</option>\
+                                            <option name="estado_compromiso" data-subtext="No ha empezado a realizarlo">Asignado</option>\
+                                            <option name="estado_compromiso" data-subtext="Asignado y se está realizando">En curso</option>\
+                                            <option name="estado_compromiso">Completado</option>\
+                                            <option name="estado_compromiso">Eliminado</option>';
+                var estados_acuerdos = '<option name="estado_acuerdo">Vigente<\/option>\
+                                        <option name="estado_acuerdo">Eliminado<\/option>';
+                var estados_dudas = '<option name="estado_duda">Pendiente</option>\
+                                    <option name="estado_duda">Resuelta</option>\
+                                    <option name="estado_duda">Eliminada</option>';
+            $('#ver_elemento_estado').find('option').remove();
+            if(tipo_elemento == 'Compromiso'){
+                $('#ver_elemento_estado').append(estados_compromisos);
+                $('#ver_elemento_usuario_responsable_compromiso').css('display','block');
+            }
+            if(tipo_elemento == 'Desacuerdo') {
+                $('#ver_elemento_estado').append(estados_acuerdos);
+                $('#ver_elemento_usuario_responsable_compromiso').css('display','none');
+            }
+            if(tipo_elemento == 'Acuerdo') {
+                $('#ver_elemento_estado').append(estados_acuerdos);
+                $('#ver_elemento_usuario_responsable_compromiso').css('display','none');
+            }
+            if(tipo_elemento == 'Duda'){
+                $('#ver_elemento_estado').append(estados_dudas);
+                $('#ver_elemento_usuario_responsable_compromiso').css('display','none');
+            }
+            $('#ver_elemento_nombre').val($('#'+id_div_elemento + '_nombre').val());
+            $('#ver_elemento_descripcion').val($('#'+id_div_elemento + '_descripcion').val());
+            document.getElementById('ver_elemento_tipo').value = tipo_elemento;
+            document.getElementById('ver_elemento_estado').value =$('#'+id_div_elemento + '_estado').val();
+            if($('#'+id_div_elemento + '_estado').val() === "Pendiente por asignar"){
+                $('#ver_elemento_usuario_responsable_compromiso').css('display','none');
+            }
+            document.getElementById('ver_elemento_responsable').value =$('#'+id_div_elemento + '_responsable').val();
+            $('#ver_elemento_padre').val($('#'+id_div_elemento + '_elemento_padre').val());
+            $('#ver_elemento_fecha_inicio').val($('#'+id_div_elemento + '_fecha_inicio').val());
+            $('#ver_elemento_fecha_termino').val($('#'+id_div_elemento + '_fecha_termino').val());
+
+            //Ajustamos el tamaño de los input
+            $('#ver_elemento_nombre').attr('size', $('#ver_elemento_nombre').val().length);
+            $('#ver_elemento_descripcion').attr('size', $('#ver_elemento_descripcion').val().length);
+
+            //Para saber qué elemento editar
+            $('#elemento_a_editar').val(id_div_elemento);
+
+            /*
+            * Eliminamos, de elementos padres, este mismo elemento.
+            * */
+            $('#ver_elemento_padre > option').each(function() {
+                var nombre_select = $(this).text();
+                var nombre_elemento = $('#'+id_div_elemento+'_nombre').val();
+                if (nombre_elemento.toString() ===  nombre_select.toString()){
+                    $(this).css('display','none');
+                }
+                else{
+                    $(this).css('display','block');
+                }
+            });
+
+            //Para que actualice los valores puestos en los select.
+            $('#ver_elemento_tipo').selectpicker('refresh');
+            $('#ver_elemento_estado').selectpicker('refresh');
+            $('#ver_elemento_responsable').selectpicker('refresh');
+            $('#ver_elemento_padre').selectpicker('refresh');
+            $('#elemento_padre').selectpicker('refresh');
+
+            $('#modal-ver-elemento').modal('show');
+        }
+
+
+        function eliminar_tema(tema){
+            swal({
+                title: "¿Estás seguro?",
+                text: "El tema y sus elementos serán eliminados permanentemente.",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#DD6B55",
+                confirmButtonText: "Sí, eliminar",
+                cancelButtonText: "Cancelar",
+                closeOnConfirm: false
+            }, function(){
+                var temp = parseInt($('#cant_elementos_tema_'+tema).val());
+                var nombre_elementos = [];
+
+                console.log("cantidad elementos es: "+temp);
+                //Obtengo lista con todos los nombres de los elemenetos del tema a eliminar
+                for (i = 0; i < temp; i++) {
+                    var cont = i+1;
+                    nombre_elementos.push($('#elemento_'+cont+'_tema_'+tema+'_nombre').val());
+                }
+
+                if(nombre_elementos.length>0) {
+                    /*
+                    * Eliminamos elemento de select ver_elemento_padre y elemento_padre los elementos del tema a eliminar
+                    * */
+                    //Si elementos eliminados eran padres, se dejan como vacíos en sus elementos hijos
+                    for (i = 0; i < temp; i++) {
+                        var cont = i+1;
+                        var elem_padre = $('#elemento_'+cont+'_tema_'+tema+'_elemento_padre');
+                        console.log("Elemento padre es (elementos_del_tema): "+elem_padre);
+                        if (nombre_elementos.indexOf(elem_padre.val().toString()) >= 0) {
+                            elem_padre.val("");
+                        }
+                    }
+
+                    $('#ver_elemento_padre > option').each(function() {
+                        var nombre_select = $(this).text();
+                        if (nombre_elementos.indexOf(nombre_select.toString()) >= 0){
+                            $(this).remove();
+                        }
+                    });
+                    var nombre_elemento_a_eliminar = "";
+                    $('#elemento_padre > option').each(function() {
+                        var nombre_select = $(this).text();
+                        if (nombre_elementos.indexOf(nombre_select.toString()) >= 0){
+                            $(this).remove();
+                        }
+                    });
+                }
+                $('#tema_'+tema).remove();
+                //cant_temas = cant_temas-1;
+                $('#cantidad_total_temas').val( function( index, val ) {
+                    return +val-1;
+                });
+                $('#ver_elemento_padre').selectpicker('refresh');
+                $('#elemento_padre').selectpicker('refresh');
+                swal("¡Tema eliminado!", "El tema ha sido eliminado exitósamente.", "success");
+            });
+        }
+
+        function eliminar_elemento(elemento, tema){
+            swal({
+                title: "¿Estás seguro?",
+                text: "El elemento será eliminado permanentemente.",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#DD6B55",
+                confirmButtonText: "Sí, eliminar",
+                cancelButtonText: "Cancelar",
+                closeOnConfirm: false
+            }, function(){
+
+                //Restamos cantidad de elementos del tema
+                $('#cant_elementos_tema_'+tema).val( function( index, val ) {
+                    return +val-1;
+                });
+
+                /*
+                * Eliminamos elemento de select ver_elemento_padre y elemento_padre
+                * */
+                $('#ver_elemento_padre > option').each(function() {
+                    var nombre_select = $(this).text();
+                    var nombre_elemento = $('#elemento_'+elemento+'_tema_'+tema+'_nombre').val();
+                    if (nombre_elemento.toString() ===  nombre_select.toString()){
+                        $(this).remove();
+                    }
+                });
+                var nombre_elemento_a_eliminar = "";
+                $('#elemento_padre > option').each(function() {
+                    var nombre_select = $(this).text();
+                    var nombre_elemento = $('#elemento_'+elemento+'_tema_'+tema+'_nombre').val();
+                    if (nombre_elemento.toString() ===  nombre_select.toString()){
+                        nombre_elemento_a_eliminar = nombre_select;
+                        $(this).remove();
+                    }
+                });
+
+                $('div[name="elementos_del_tema"]').each(function(){
+                    var elem_padre = $(this).children('#elemento_'+elemento+'_tema_'+tema+'_elemento_padre');
+                    if(typeof elem_padre === 'undefined') {
+                        if (elem_padre.val().toString() === nombre_elemento_a_eliminar.toString()) {
+                            elem_padre.val("");
+                        }
+                    }
+                });
+
+                $('#ver_elemento_padre').selectpicker('refresh');
+                $('#elemento_padre').selectpicker('refresh');
+
+                $('#elemento_'+elemento+'_tema_'+tema).remove();
+                swal("¡Elemento eliminado!", "El elemento ha sido eliminado exitósamente.", "success");
+            });
+        }
+
+        /*
+        * Funcion que setea variable para saber qué modal está abierto. Con ello, sabemos a qué tema agregar el elemento dialógico creado
+        * */
+        function modalAbierto(cant_temas){
+            modal_abierto = cant_temas;
+        }
+        /*
+        function redirigir(url){
+            swal({
+                title: "¿Estás seguro?",
+                text: "Perderás el progreso que llevas en esta página",
+                type: "warning",
+                showCancelButton: true,
+                confirmButtonColor: "#DD6B55",
+                confirmButtonText: "Sí, deseo irme de esta página",
+                cancelButtonText: "Cancelar",
+                closeOnConfirm: false
+            }, function(){
+                go = true;
+                window.location=url;
+            });
+        }*/
+        function submit_form(){
+            return true;
+        }
+        var submit=false;
+        $(window).bind('beforeunload', function(){
+            if (submit == false) {
+                return "¿Estás seguro? Perderás el progreso que no hayas guardado";
+            }
+        });
+    </script>

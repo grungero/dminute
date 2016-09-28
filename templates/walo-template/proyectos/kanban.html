@@ -1,0 +1,671 @@
+{% extends 'walo-template/base.html' %}
+
+{% load staticfiles %}
+<link href="{% static "css/kanban.css" %}" rel="stylesheet">
+
+{% block titulo %}Ver Proyecto{% endblock %}
+
+{% block breadcumb %}
+    <li class=""><a href="/index/">Proyectos</a></li>
+    <li class=""><a href="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/">{{ proyecto.nombre_proyecto }}</a></li>
+    <li class="active"><strong>Tablero Kanban</strong></li>
+{% endblock %}
+{% block contenido %}
+    <section id="content">
+        <div class="container-fluid">
+
+            <!-- Agregar nueva tarea a pendiente-->
+            <div class="modal fade" id="agregar_tarea_modal" data-backdrop="static" data-keyboard="false">
+                <input type="hidden" id="tipo_tarea" value="">
+                <input type="hidden" id="color_tarea" value="">
+                <input type="hidden" id="kanban_columna" value="">
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div id="modal-header" class="modal-header">
+                            <h3 class="modal-title" style="color: #FFFFFF;">Agregar Tarea a <span id="nombre_tipo_tarea"></span></h3>
+                        </div>
+                        <br>
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-sm-12 m-b-20">
+                                    <div class="row">
+                                        <div class="col-sm-4">
+                                            <div class="form-group fg-line">
+                                                <label>Nombre tarea</label>
+                                                <textarea id="nombre" name="nombre" class="form-control" placeholder="ej: Realizar pruebas unitarias" maxlength="50" autocomplete="off"></textarea>
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-8">
+                                            <div class="form-group fg-line">
+                                                <label>Descripción</label>
+                                                <textarea id="descripcion" name="descripcion" class="form-control" placeholder="ej: Se deben planificar y codificar las pruebas" maxlength="600" autocomplete="off"></textarea>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="row">
+                                        <div class="col-sm-6">
+                                            <div class="form-group fg-line">
+                                                <label>Fecha inicio</label>
+                                                <input name="fecha_inicio" id="fecha_inicio" type="text" class="form-control input-mask" data-mask="00/00/0000" placeholder="ej:01/06/2014" maxlength="10" autocomplete="off">
+                                            </div>
+                                        </div>
+                                        <div class="col-sm-6 m-b-10">
+                                            <div class="form-group fg-line">
+                                                <label>Fecha término</label>
+                                                <input name="fecha_termino" id="fecha_termino" type="text" class="form-control input-mask" data-mask="00/00/0000" placeholder="ej:01/06/2014" maxlength="10" autocomplete="off">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="responsable_tarea" class="form-group fg-line">
+                                        <label>Persona asignada</label>
+                                        <select id="usuario_responsable" name="usuario_responsable" class="selectpicker ">
+                                            {% for user_proyecto in proyecto.usuario_proyecto_set.all %}
+                                                <option value="{{ user_proyecto.usuario.id }}">{{ user_proyecto.usuario.user.first_name }} {{ user_proyecto.usuario.user.last_name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    <div class="form-group fg-line">
+                                        <label>Reunión a la que pertenece</label>
+
+                                        <!-- solo mostramos las actas con temas! -->
+                                        <select onchange="acta_seleccionada();" id="acta_pertenece" name="acta_pertenece" class="selectpicker" title="Escoja tema">
+                                            {% for acta in actas_con_tema %}
+                                                <option value="{{ acta.id }}">Reunión {{ forloop.counter }}</option>
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    {% for acta in actas_con_tema %}
+                                        {% if forloop.first %}
+                                            <div class="form-group fg-line" name="discusion_acta" id="discusion_acta_{{ acta.id }}">
+                                        {% else %}
+                                            <div class="form-group fg-line" name="discusion_acta" id="discusion_acta_{{ acta.id }}" style="display:none;">
+                                        {% endif %}
+                                        <i class="md md-comment" data-toggle="tooltip" data-placement="top" title="Resumen reunión"></i>
+                                        <small>
+                                            {{ acta.resumen_acta }}
+                                        </small>
+                                    </div>
+                                    {% endfor %}
+
+                                    <div class="form-group fg-line">
+                                        <label>Tema de la reunión</label>
+                                        <select onchange="tema_seleccionado();" id="tema" name="tema" class="selectpicker" data-live-search="true">
+                                            {% for acta in actas_con_tema %}
+                                                {% for tema in acta.tema_set.all %}
+                                                    {% if forloop.parentloop.first %}
+                                                        <option name="temas_acta_{{ acta.id }}" value="{{ tema.id }}">
+                                                    {% else %}
+                                                        <option name="temas_acta_{{ acta.id }}" value="{{ tema.id }}" style="display:none;">
+                                                    {% endif %}
+                                                    {% if tema.titulo_tema|length < 40 %}
+                                                        {{ tema.titulo_tema }}
+                                                    {% else %}
+                                                        {{ tema.titulo_tema|truncatechars:40 }}...
+                                                    {% endif %}
+                                                        </option>
+                                                 {% endfor %}
+                                            {% endfor %}
+                                        </select>
+                                    </div>
+
+                                    {% for acta in actas_con_tema %}
+                                        {% for tema in acta.tema_set.all %}
+                                            <div class="form-group fg-line" name="discusion_tema" id="discusion_tema_{{ tema.id }}" style="display:none;">
+                                                <i class="md md-comment" data-toggle="tooltip" data-placement="top" title="Discusión del tema"></i>
+                                                <small>
+                                                    {{ tema.descripcion_tema }}
+                                                </small>
+                                            </div>
+                                        {% endfor %}
+                                    {% endfor %}
+
+
+                                    <div class="form-group fg-line">
+                                        <label>Elemento padre</label>
+                                        <select id="elemento_padre" name="elemento_padre" class="selectpicker">
+                                            <option value="">No tiene</option>
+                                            {% for acta in proyecto.acta_set.all %}
+                                                 {% for tema in acta.tema_set.all %}
+                                                     {% for elemento in tema.elemento_set.all %}
+                                                        <option value="{{ elemento.id }}">{{ elemento.tipo_elemento }} -
+                                                            {% if elemento.descripcion_elemento|length < 40 %}
+                                                                {{ elemento.descripcion_elemento }}
+                                                            {% else %}
+                                                                {{ elemento.descripcion_elemento|truncatechars:40 }}...
+                                                            {% endif %}
+                                                        </option>
+                                                     {% endfor %}
+                                                 {% endfor %}
+                                            {% endfor %}
+
+                                        </select>
+                                    </div>
+                                    <input type="hidden" id="getStart" />
+                                    <input type="hidden" id="getEnd" />
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="modal-footer" class="modal-footer">
+                            <button type="button" class="btn btn-link" data-dismiss="modal">Cancelar</button>
+                            <button id="agregar_tarea_btn" type="submit" class="btn waves-effect" id="agregar_tarea_btn" onclick="agregar_tarjeta();">Agregar</button>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+
+            <div class="row kanban">
+                <div class="col-sm-3">
+                    <div class="card">
+                        <div class="card-header bgm-amber">
+                            <h2>Pendientes por asignar</h2>
+                            <button id="agregar_tarea_pendiente" class="btn bgm-amber btn-float waves-effect waves-effect z-depth-2" data-target-color="amber" data-toggle="modal"><i class="md md-add"></i></button>
+                        </div>
+
+
+                        <div class="card-body card-padding kanban-col-body" id="kanban-pendiente">
+                            {% for acta in actas_con_tema %}
+                                {% for tema in acta.tema_set.all %}
+                                    {% for elemento in tema.elemento_set.all %}
+                                        {% if elemento.estado_elemento == "Pendiente por asignar" %}
+                                            <div class="kanban-card bgm-amber text-left">
+                                                <input type="hidden" name="id_tarea" value="{{ elemento.id }}">
+                                                <a href="#" class="kanban-user-responsable">
+                                                    <img src="{% static "img/profile-pics/user-default.png" %}" alt="">
+                                                </a>
+                                                <p class="kanban-task">{{ elemento.titulo_elemento }}</p>
+                                                <ul class="actions">
+                                                    <li class="dropdown">
+                                                        <a href="" data-toggle="dropdown">
+                                                            <i class="md md-more-vert"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href="javascript: void(0);">Editar</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href="javascript: void(0);">Eliminar</a>
+                                                            </li>
+                                                        </ul>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-sm-3">
+                    <div class="card">
+                        <div class="card-header bgm-orange">
+                            <h2>Asignado</h2>
+                            <button id="agregar_tarea_asignado" class="btn bgm-orange btn-float waves-effect waves-effect z-depth-2"><i class="md md-add"></i></button>
+                        </div>
+                        <div class="card-body card-padding kanban-col-body" id="kanban-asignado">
+                            {% for acta in actas_con_tema %}
+                                {% for tema in acta.tema_set.all %}
+                                    {% for elemento in tema.elemento_set.all %}
+                                        {% if elemento.estado_elemento == "Asignado" %}
+                                            <div class="kanban-card bgm-orange text-left">
+                                                <input type="hidden" name="id_tarea" value="{{ elemento.id }}">
+                                                <a href="#" class="kanban-user-responsable">
+                                                    <img src="{% static "img/profile-pics/user-default.png" %}" alt="">
+                                                </a>
+                                                <p class="kanban-task">{{ elemento.titulo_elemento }}</p>
+                                                <ul class="actions">
+                                                    <li class="dropdown">
+                                                        <a href="" data-toggle="dropdown">
+                                                            <i class="md md-more-vert"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href="javascript: void(0);">Editar</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href="javascript: void(0);">Eliminar</a>
+                                                            </li>
+                                                        </ul>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="card">
+                        <div class="card-header bgm-cyan">
+                            <h2>En curso</h2>
+                            <button id="agregar_tarea_encurso" class="btn bgm-cyan btn-float waves-effect waves-effect z-depth-2"><i class="md md-add"></i></button>
+                        </div>
+
+
+                        <div class="card-body card-padding kanban-col-body" id="kanban-encurso">
+                            {% for acta in actas_con_tema %}
+                                {% for tema in acta.tema_set.all %}
+                                    {% for elemento in tema.elemento_set.all %}
+                                        {% if elemento.estado_elemento == "En curso" %}
+                                            <div class="kanban-card bgm-cyan text-left">
+                                                <input type="hidden" name="id_tarea" value="{{ elemento.id }}">
+                                                <a href="#" class="kanban-user-responsable">
+                                                    <img src="{% static "img/profile-pics/user-default.png" %}" alt="">
+                                                </a>
+                                                <p class="kanban-task">{{ elemento.titulo_elemento }}</p>
+                                                <ul class="actions">
+                                                    <li class="dropdown">
+                                                        <a href="" data-toggle="dropdown">
+                                                            <i class="md md-more-vert"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href="javascript: void(0);">Editar</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href="javascript: void(0);">Eliminar</a>
+                                                            </li>
+                                                        </ul>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+                <div class="col-sm-3">
+                    <div class="card">
+                        <div class="card-header bgm-green">
+                            <h2>Finalizados</h2>
+                            <button id="agregar_tarea_finalizado" class="btn bgm-green btn-float waves-effect waves-effect z-depth-2"><i class="md md-add"></i></button>
+                        </div>
+
+                        <div class="card-body card-padding kanban-col-body" id="kanban-finalizado">
+                            {% for acta in actas_con_tema %}
+                                {% for tema in acta.tema_set.all %}
+                                    {% for elemento in tema.elemento_set.all %}
+                                        {% if elemento.estado_elemento == "Eliminado" %}
+                                            <div class="kanban-card bgm-green text-left">
+                                                <input type="hidden" name="id_tarea" value="{{ elemento.id }}">
+                                                <a href="#" class="kanban-user-responsable">
+                                                    <img src="{% static "img/profile-pics/user-default.png" %}" alt="">
+                                                </a>
+                                                <p class="kanban-task">{{ elemento.titulo_elemento }}</p>
+                                                <ul class="actions">
+                                                    <li class="dropdown">
+                                                        <a href="" data-toggle="dropdown">
+                                                            <i class="md md-more-vert"></i>
+                                                        </a>
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href="javascript: void(0);">Editar</a>
+                                                            </li>
+                                                            <li>
+                                                                <a href="javascript: void(0);">Eliminar</a>
+                                                            </li>
+                                                        </ul>
+                                                    </li>
+                                                </ul>
+                                            </div>
+                                        {% endif %}
+                                    {% endfor %}
+                                {% endfor %}
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    </section>
+
+    <script type="text/javascript">
+
+        $(function () {
+            $('#fecha_inicio').datetimepicker({
+                format: 'DD/MM/YYYY'
+            });
+            $('#fecha_termino').datetimepicker({
+                format: 'DD/MM/YYYY'
+            });
+        });
+        var byId = function (id) { return document.getElementById(id); }
+        var kanban_pendiente = document.getElementById("kanban-pendiente");
+        var kanban_asignado = document.getElementById("kanban-asignado");
+        var kanban_encurso = document.getElementById("kanban-encurso");
+        var kanban_finalizado = document.getElementById("kanban-finalizado");
+        var pendiente = "Pendiente por asignar";
+        var asignado = "Asignado";
+        var en_curso = "En curso";
+        var finalizado = "Completado";
+        var id_tarea = "";
+
+        $(document).ready(function() {
+            Sortable.create(kanban_pendiente, {
+                sort: true,
+                    group:{
+                        name: 'kanban',
+                        pull: true,
+                        put: true
+                    },
+                    animation: 150,
+                    draggable: '.kanban-card',
+                onAdd: function (/**Event*/evt) {
+                    //Añadimos el color de la tarjeta, y hacemos el llamado por ajax para cambiar el estado
+                    $(evt.item).addClass('bgm-amber');
+                    id_tarea = $(evt.item).find('input:hidden').val();
+                    cambiar_estado_tarjeta(id_tarea, pendiente);
+                },
+                onRemove: function (/**Event*/evt) {
+                    //Sacamos el color de la tarjeta
+                    $(evt.item).removeClass('bgm-amber');
+                }
+            });
+
+            Sortable.create(kanban_asignado, {
+                sort: true,
+                    group:{
+                        name: 'kanban',
+                        pull: true,
+                        put: true
+                    },
+                    animation: 150,
+                    draggable: '.kanban-card',
+                onAdd: function (/**Event*/evt) {
+                    //Añadimos el color de la tarjeta, y hacemos el llamado por ajax para cambiar el estado
+                    $(evt.item).addClass('bgm-orange');
+                    id_tarea = $(evt.item).find('input:hidden').val();
+                    cambiar_estado_tarjeta(id_tarea, asignado);
+                },
+                onRemove: function (/**Event*/evt) {
+                    //Sacamos el color de la tarjeta
+                    $(evt.item).removeClass('bgm-orange');
+                }
+            });
+
+            Sortable.create(kanban_encurso, {
+                sort: true,
+                    group:{
+                        name: 'kanban',
+                        pull: true,
+                        put: true
+                    },
+                    animation: 150,
+                    draggable: '.kanban-card',
+                onAdd: function (/**Event*/evt) {
+                    //Añadimos el color de la tarjeta, y hacemos el llamado por ajax para cambiar el estado
+                    $(evt.item).addClass('bgm-cyan');
+                    id_tarea = $(evt.item).find('input:hidden').val();
+                    cambiar_estado_tarjeta(id_tarea, en_curso);
+                },
+                onRemove: function (/**Event*/evt) {
+                    //Sacamos el color de la tarjeta
+                    $(evt.item).removeClass('bgm-cyan');
+                }
+
+            });
+
+            Sortable.create(kanban_finalizado, {
+                sort: true,
+                    group:{
+                        name: 'kanban',
+                        pull: true,
+                        put: true
+                    },
+                    animation: 150,
+                    draggable: '.kanban-card',
+                onAdd: function (/**Event*/evt) {
+                    //Añadimos el color de la tarjeta, y hacemos el llamado por ajax para cambiar el estado
+                    $(evt.item).addClass('bgm-green');
+                    id_tarea = $(evt.item).find('input:hidden').val();
+                    cambiar_estado_tarjeta(id_tarea, finalizado);
+                },
+                onRemove: function (/**Event*/evt) {
+                    //Sacamos el color de la tarjeta
+                    $(evt.item).removeClass('bgm-green');
+                }
+
+            });
+
+            $('#agregar_tarea_pendiente').click(function(){
+                //e.preventDefault();
+                $('#agregar_tarea_modal').modal('show');
+                $('#nombre_tipo_tarea').html('"Pendiente"');
+                $('#tipo_tarea').val('Pendiente por asignar');
+                $('#color_tarea').val('amber');
+                $('#kanban_columna').val('pendiente');
+
+                //Eliminamos responsable
+                $('#responsable_tarea').css('display', 'none');
+
+                //Estilo modal
+                $('#modal-header').css('background-color', '#FFC107');
+                $('#modal-footer').css('background-color', '#FFC107');
+                $('#agregar_tarea_btn').addClass('bgm-amber');
+                //$('#agregar_tarea_modal_todo input:text').val('');
+                $('#getStart').val(start);
+            });
+            $('#agregar_tarea_asignado').click(function(){
+                //e.preventDefault();
+                $('#agregar_tarea_modal').modal('show');
+                $('#nombre_tipo_tarea').html('"Asignado"');
+                $('#tipo_tarea').val('Asignado');
+                $('#color_tarea').val('orange');
+                $('#kanban_columna').val('asignado');
+
+                $('#responsable_tarea').css('display', 'block');
+
+                //Estilo modal
+                $('#modal-header').css('background-color', '#FF9800');
+                $('#modal-footer').css('background-color', '#FF9800');
+                $('#agregar_tarea_btn').addClass('bgm-orange');
+                //$('#agregar_tarea_modal_todo input:text').val('');
+                $('#getStart').val(start);
+            });
+            $('#agregar_tarea_encurso').click(function(){
+                //e.preventDefault();
+                $('#agregar_tarea_modal').modal('show');
+                $('#nombre_tipo_tarea').html('"En curso"');
+                $('#tipo_tarea').val('En curso');
+                $('#color_tarea').val('cyan');
+                $('#kanban_columna').val('encurso');
+
+                $('#responsable_tarea').css('display', 'block');
+
+                //Estilo modal
+                $('#modal-header').css('background-color', '#00BCD4');
+                $('#modal-footer').css('background-color', '#00BCD4');
+                $('#agregar_tarea_btn').addClass('bgm-cyan');
+                //$('#agregar_tarea_modal_todo input:text').val('');
+                $('#getStart').val(start);
+            });
+            $('#agregar_tarea_finalizado').click(function(){
+                //e.preventDefault();
+                $('#agregar_tarea_modal').modal('show');
+                $('#nombre_tipo_tarea').html('"Finalizado"');
+                $('#tipo_tarea').val('Completado');
+                $('#color_tarea').val('green');
+                $('#kanban_columna').val('finalizado');
+
+                $('#responsable_tarea').css('display', 'block');
+
+                //Estilo modal
+                $('#modal-header').css('background-color', '#4CAF50');
+                $('#modal-footer').css('background-color', '#4CAF50');
+                $('#agregar_tarea_btn').addClass('bgm-green');
+                //$('#agregar_tarea_modal_todo input:text').val('');
+                $('#getStart').val(start);
+            });
+        });
+
+        function agregar_tarjeta(){
+            var color = $('#color_tarea').val();
+            var kanban_columna = $('#kanban_columna').val();
+            $('#agregar_tarea_modal').modal('hide');
+                        $('#kanban-'+kanban_columna).append('<div class="kanban-card bgm-'+color+' text-left">\
+                                    <input type="hidden" name="id_tarea" value="NO">\
+                                    <a href="#" class="kanban-user-responsable">\
+                                        <img src="{% static "img/profile-pics/user-default.png" %}" alt="">\
+                                    </a>\
+                                    <p class="kanban-task">'+$('#nombre').val()+'</p>\
+                                    <ul class="actions">\
+                                        <li class="dropdown">\
+                                            <a href="" data-toggle="dropdown">\
+                                                <i class="md md-more-vert"></i>\
+                                            </a>\
+                                            <ul class="dropdown-menu dropdown-menu-right">\
+                                                <li>\
+                                                    <a href="javascript: void(0);">Editar</a>\
+                                                </li>\
+                                                <li>\
+                                                    <a href="javascript: void(0);">Eliminar</a>\
+                                                </li>\
+                                            </ul>\
+                                        </li>\
+                                    </ul>\
+                                </div>');
+            /*$.ajax({
+                async: true,
+                type: 'post',
+                url: '/{{ proyecto.id }}/agregar_tarjeta/',
+                data:{
+                    'nombre_tarea': $('#nombre').text(),
+                    'descripcion_tarea': $('#descripcion').text(),
+                    'fecha_inicio': $('#fecha_inicio').val(),
+                    'fecha_termino': $('#fecha_termino').val(),
+                    'usuario_responsable': $('#usuario_responsable').val(),
+                    'estado_tarea': $('#tipo_tarea').val(),
+                    'elemento_padre': $('#elemento_padre').val()
+                },
+                beforeSend: function () {
+                    //$('#loading').fadeIn(100);
+                },
+                success: function (response) {
+                    if (response['success']){
+                        var id_tarea = response['id_tarea'];
+                        var nombre_tarea = response['nombre_tarea'];
+                        var descripcion_tarea = response['descripcion_tarea'];
+                        var fecha_inicio = response['fecha_inicio'];
+                        var fecha_termino = response['fecha_termino'];
+                        var usuario_responsable_id = response['usuario_responsable_id'];
+                        var usuario_responsable_nombre = response['usuario_responsable_nombre'];
+                        var elemento_padre_id = response['elemento_padre_id'];
+                        var elemento_padre_titulo = response['elemento_padre_titulo'];
+                        swal({
+                            title: "¡Tarea añadida!",
+                            type: "success",
+                            timer: 1000,
+                            showConfirmButton: false
+                        });
+                        $('#agregar_tarea_modal').modal('hide');
+                        $('#kanban-'+kanban_columna).append('<div class="kanban-card bgm-'+color+' text-left">\
+                                    <input type="hidden" name="id_tarea" value="'+id_tarea+'">\
+                                    <a href="#" class="kanban-user-responsable">\
+                                        <img src="{% static "img/profile-pics/user-default.png" %}" alt="">\
+                                    </a>\
+                                    <p class="kanban-task">'+nombre_tarea+'</p>\
+                                    <ul class="actions">\
+                                        <li class="dropdown">\
+                                            <a href="" data-toggle="dropdown">\
+                                                <i class="md md-more-vert"></i>\
+                                            </a>\
+                                            <ul class="dropdown-menu dropdown-menu-right">\
+                                                <li>\
+                                                    <a href="javascript: void(0);">Editar</a>\
+                                                </li>\
+                                                <li>\
+                                                    <a href="javascript: void(0);">Eliminar</a>\
+                                                </li>\
+                                            </ul>\
+                                        </li>\
+                                    </ul>\
+                                </div>');
+                    }
+                    else{
+                        swal("Error", "Hubo un problema al agregar la tarea. Por favor refresque la página e intente nuevamente. Si el problema persiste, contáctese con el administrador.", "error");
+                    }
+                },
+                timeout: 8000,
+                error: function (jqXHR, textStatus, errorThrown) {
+                    swal("Error", "Hubo un problema al agregar la tarea. Por favor refresque la página e intente nuevamente. Si el problema persiste, contáctese con el administrador.", "error");
+                }
+            });
+            */
+        }
+
+        $('#agregar_tarea_modal').on('hidden.bs.modal', function () {
+            //Para cambiar el color del boton "Agregar"
+            $('#agregar_tarea_btn').removeClass('bgm-'+$('#color_tarea').val());
+        });
+
+
+        function acta_seleccionada() {
+            var id_acta = $('#acta_pertenece').val();
+            $("div[name='discusion_acta']").hide();
+            $("option[name*='temas_acta_']").each(function(){
+                $(this).hide();
+                $(this).show();
+                var temas_del_acta = "temas_acta_"+id_acta;
+                var id_temp = $(this).attr('name');
+                if(temas_del_acta === id_temp)
+                    $(this).show();
+                else
+                    $(this).hide();
+            });
+            $('#discusion_acta_'+id_acta).show();
+            $('#tema').selectpicker('refresh');
+        }
+        function tema_seleccionado(){
+            $("div[name='discusion_tema']").hide();
+
+            var id_tema = $('#tema').val();
+            $('#discusion_tema_'+id_tema).show();
+        }
+        function cambiar_estado_tarjeta(id_tarea, estado_tarea) {
+            if (id_tarea !== "NO"){
+                $.ajax({
+                    async: true,
+                    type: 'post',
+                    url: '/{{ proyecto.id }}/cambiar_estado_tarjeta/',
+                    data: {
+                        'id_tarea': id_tarea,
+                        'estado_tarea': estado_tarea
+                    },
+                    beforeSend: function () {
+                        //$('#loading').fadeIn(100);
+                    },
+                    success: function (response) {
+                        if (response['success']) {
+                            swal({
+                                title: "¡Estado de la tarea editado!",
+                                type: "success",
+                                timer: 1000,
+                                showConfirmButton: false
+                            });
+                        }
+                        else {
+                            swal("Error", "Hubo un problema al editar el estado de la tarea. Por favor refresque la página e intente nuevamente. Si el problema persiste, contáctese con el administrador.", "error");
+                        }
+                    },
+                    timeout: 8000,
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        swal("Error", "Hubo un problema al editar el estado de la tarea. Por favor refresque la página e intente nuevamente. Si el problema persiste, contáctese con el administrador.", "error");
+                    }
+                });
+            } 
+        }
+
+        window.onload = tema_seleccionado();
+    </script>
+
+{% endblock %}

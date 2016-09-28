@@ -1,0 +1,540 @@
+{% extends 'walo-template/proyectos/base.html' %}
+{% load staticfiles %}
+
+{% block menu_activo %}
+    <li class="waves-effect"><a href="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/">Acerca del Proyecto</a></li>
+    <li class="waves-effect"><a href="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/calendario_actas/">Actas Dialógicas</a></li>
+    <li class="active waves-effect"><a href="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/sintesis_dialogica/">Síntesis Dialógica</a></li>
+{% endblock %}
+
+{% block contenido_menu_escogido %}
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="card" id="filtros">
+                <div class="card-header ch-alt">
+                    <h2><a class="collapse-trigger" href="#filtros-body" data-toggle="collapse"><i class="md md-expand-more"></i> Filtros</a></h2>
+                </div>
+
+                <div class="card-body collapse in card-padding" id="filtros-body">
+                    <div class="col-sm-4 m-b-10">
+                        <div class="form-group fg-float">
+                            <div class="fg-line">
+                                <input id="nombre_elemento" type="text" class="form-control fg-input">
+                            </div>
+                            <label class="fg-label">Nombre</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-4 m-b-10">
+                        <div class="form-group fg-float">
+                            <div class="fg-line">
+                                <input id="fecha_inicio" type="text" class="form-control fg-input">
+                            </div>
+                            <label class="fg-label">Fecha inicio elemento</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-4 m-b-10">
+                        <div class="form-group fg-float">
+                            <div class="fg-line">
+                                <input id="fecha_termino" type="text" class="form-control fg-input">
+                            </div>
+                            <label class="fg-label">Fecha término elemento</label>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 m-b-10">
+                        <div class="form-group fg-float">
+                            <div class="fg-line">
+                                <select multiple id="miembros_proyecto" name="miembros_proyecto" class="selectpicker" title="Usuario responsable" >
+                                    {% for x in usuarios_proyecto %}
+                                        <option value="{{ x.usuario.id }}">{{ x.usuario.user.first_name }} {{ x.usuario.user.last_name }} - {{ x.usuario.id }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-sm-6 m-b-10">
+                        <div class="form-group fg-float">
+                            <div class="fg-line">
+                                <input id="discusion_elemento" type="text" class="form-control fg-input">
+                            </div>
+                            <label class="fg-label">Texto en discusión</label>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" id="cancelar_filtrar_elementos" onClick="window.location.href=window.location.href" name="cancelar_filtrar_elementos" class="btn bgm-blue waves-effect"><i class="md md-sync"></i> Reiniciar filtros</button>
+                        <button type="button" id="filtrar_elementos" name="filtrar_elementos" class="btn bgm-blue waves-effect"><i class="md md-sync"></i> Filtrar</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="card" id="compromisos">
+                <div class="card-header bgm-cyan">
+                    <h2><a class="collapse-trigger" id="compromisos" href="#compromisos-body" data-toggle="collapse"><i class="md md-expand-more"></i> Compromisos</a></h2>
+                </div>
+                <div class="card-body collapse in" id="compromisos-body">
+                    <div class="card-filters card-padding-sm">
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" value="" rel="ppa" checked>
+                                <i class="input-helper"></i>
+                                Pendiente por asignar
+                            </label>
+                        </div>
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" value="" rel="a" checked>
+                                <i class="input-helper"></i>
+                                Asignado
+                            </label>
+                        </div>
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" value="" rel="ec" checked>
+                                <i class="input-helper"></i>
+                                En curso
+                            </label>
+                        </div>
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" value="" rel="e" checked>
+                                <i class="input-helper"></i>
+                                Eliminado
+                            </label>
+                        </div>
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" value="" rel="c" checked>
+                                <i class="input-helper"></i>
+                                Completado
+                            </label>
+                        </div>
+                    </div>
+                    <div class="listview">
+
+                        {% for acta in proyecto.acta_set.all%}
+                            {% for tema in acta.tema_set.all %}
+                                {% for elemento in tema.elemento_set.all %}
+                                    {% if elemento.tipo_elemento == "Compromiso" %}
+                                        {% if elemento.estado_elemento == "Pendiente por asignar" %}
+                                            <div class="lv-item media elemento_dialogico" data-type="ppa">
+                                                <input type="hidden" value="{{ elemento.id }}"/>
+                                                <div class="media-body">
+                                                    <div class="lv-title">
+                                                        <span class="badge">PPA</span><span> {{ elemento.titulo_elemento }}</span>
+                                                    </div>
+
+                                        {% elif elemento.estado_elemento == "Asignado" %}
+                                            <div class="lv-item media elemento_dialogico" data-type="a">
+                                                <input type="hidden" value="{{ elemento.id }}"/>
+                                                <div class="media-body">
+                                                    <div class="lv-title">
+                                                        <span class="badge">A</span><span> {{ elemento.titulo_elemento }}</span>
+                                                    </div>
+
+                                        {% elif elemento.estado_elemento == "En curso" %}
+                                            <div class="lv-item media elemento_dialogico" data-type="ec">
+                                                <input type="hidden" value="{{ elemento.id }}"/>
+                                                <div class="media-body">
+                                                    <div class="lv-title">
+                                                        <span class="badge">EC</span><span> {{ elemento.titulo_elemento }}</span>
+                                                    </div>
+
+                                        {% elif elemento.estado_elemento == "Completado" %}
+                                            <div class="lv-item media elemento_dialogico" data-type="c">
+                                                <input type="hidden" value="{{ elemento.id }}"/>
+                                                <div class="media-body">
+                                                    <div class="lv-title">
+                                                        <span class="badge">C</span><span> {{ elemento.titulo_elemento }}</span>
+                                                    </div>
+
+                                        {% else %}
+                                            <div class="lv-item media elemento_dialogico" data-type="e">
+                                                <input type="hidden" value="{{ elemento.id }}"/>
+                                                <div class="media-body">
+                                                    <div class="lv-title">
+                                                        <span class="badge">E</span><span> {{ elemento.titulo_elemento }}</span>
+                                                    </div>
+                                        {% endif %}
+                                                    <div class="lv-actions actions dropdown">
+                                                        <a href="" data-toggle="dropdown" aria-expanded="true">
+                                                            <i class="md md-more-vert"></i>
+                                                        </a>
+
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href="#">Cambiar estado</a>
+                                                            </li>
+                                                            <li class="divider"></li>
+                                                            <li>
+                                                                <a href="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/editar_acta/{{ acta.id }}/">Ver acta</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                        {% endfor %}
+                        <a class="lv-footer" href="">Ver todos</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="card" id="acuerdos">
+                <div class="card-header bgm-cyan">
+                    <h2><a class="collapse-trigger" href="#acuerdos-body" data-toggle="collapse"><i class="md md-expand-more"></i> Acuerdos</a></h2>
+                </div>
+                <div class="card-body collapse in" id="acuerdos-body">
+                    <div class="card-filters card-padding-sm">
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" value="" rel="v" checked>
+                                <i class="input-helper"></i>
+                                Vigente
+                            </label>
+                        </div>
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" value="" rel="e" checked>
+                                <i class="input-helper"></i>
+                                Eliminado
+                            </label>
+                        </div>
+                    </div>
+                    <div class="listview">
+                        {% for acta in proyecto.acta_set.all%}
+                            {% for tema in acta.tema_set.all %}
+                                {% for elemento in tema.elemento_set.all %}
+                                    {% if elemento.tipo_elemento == "Acuerdo" %}
+                                        {% if elemento.estado_elemento == "Vigente" %}
+                                            <div class="lv-item media elemento_dialogico" data-type="v">
+                                                <input type="hidden" value="{{ elemento.id }}"/>
+                                                <div class="media-body">
+                                                    <div class="lv-title">
+                                                        <span class="badge">V</span><span> {{ elemento.titulo_elemento }}</span>
+                                                    </div>
+
+                                        {% elif elemento.estado_elemento == "Eliminado" %}
+                                            <div class="lv-item media elemento_dialogico" data-type="e">
+                                                <input type="hidden" value="{{ elemento.id }}"/>
+                                                <div class="media-body">
+                                                    <div class="lv-title">
+                                                        <span class="badge">E</span><span> {{ elemento.titulo_elemento }}</span>
+                                                    </div>
+
+                                        {% endif %}
+                                                    <div class="lv-actions actions dropdown">
+                                                        <a href="" data-toggle="dropdown" aria-expanded="true">
+                                                            <i class="md md-more-vert"></i>
+                                                        </a>
+
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href="#">Cambiar estado</a>
+                                                            </li>
+                                                            <li class="divider"></li>
+                                                            <li>
+                                                                <a href="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/editar_acta/{{ acta.id }}/">Ver acta</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                        {% endfor %}
+
+                        <a class="lv-footer" href="">Ver todos</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="card" id="desacuerdos">
+                <div class="card-header bgm-cyan">
+                    <h2><a class="collapse-trigger" href="#desacuerdos-body" data-toggle="collapse"><i class="md md-expand-more"></i> Desacuerdos</a></h2>
+                </div>
+                <div class="card-body collapse in" id="desacuerdos-body">
+                    <div class="card-filters card-padding-sm">
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" value="" rel="v" checked>
+                                <i class="input-helper"></i>
+                                Vigente
+                            </label>
+                        </div>
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" value="" rel="e" checked>
+                                <i class="input-helper"></i>
+                                Eliminado
+                            </label>
+                        </div>
+                    </div>
+                    <div class="listview">
+                        {% for acta in proyecto.acta_set.all%}
+                            {% for tema in acta.tema_set.all %}
+                                {% for elemento in tema.elemento_set.all %}
+                                    {% if elemento.tipo_elemento == "Desacuerdo" %}
+                                        {% if elemento.estado_elemento == "Vigente" %}
+                                            <div class="lv-item media elemento_dialogico" data-type="v">
+                                                <input type="hidden" value="{{ elemento.id }}"/>
+                                                <div class="media-body">
+                                                    <div class="lv-title">
+                                                        <span class="badge">V</span><span> {{ elemento.titulo_elemento }}</span>
+                                                    </div>
+
+                                        {% elif elemento.estado_elemento == "Eliminado" %}
+                                            <div class="lv-item media elemento_dialogico" data-type="e">
+                                                <input type="hidden" value="{{ elemento.id }}"/>
+                                                <div class="media-body">
+                                                    <div class="lv-title">
+                                                        <span class="badge">E</span><span> {{ elemento.titulo_elemento }}</span>
+                                                    </div>
+
+                                        {% endif %}
+                                                    <div class="lv-actions actions dropdown">
+                                                        <a href="" data-toggle="dropdown" aria-expanded="true">
+                                                            <i class="md md-more-vert"></i>
+                                                        </a>
+
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href="#">Cambiar estado</a>
+                                                            </li>
+                                                            <li class="divider"></li>
+                                                            <li>
+                                                                <a href="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/editar_acta/{{ acta.id }}/">Ver acta</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                        {% endfor %}
+
+                        <a class="lv-footer" href="">Ver todos</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xs-12">
+            <div class="card" id="dudas">
+                <div class="card-header bgm-cyan">
+                    <h2><a class="collapse-trigger" href="#dudas-body" data-toggle="collapse"><i class="md md-expand-more"></i> Dudas</a></h2>
+                </div>
+                <div class="card-body collapse in" id="dudas-body">
+                    <div class="card-filters card-padding-sm">
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" value="" rel="p" checked>
+                                <i class="input-helper"></i>
+                                Pendiente
+                            </label>
+                        </div>
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" value="" rel="r" checked>
+                                <i class="input-helper"></i>
+                                Resuelta
+                            </label>
+                        </div>
+                        <div class="checkbox">
+                            <label>
+                                <input type="checkbox" value="" rel="e" checked>
+                                <i class="input-helper"></i>
+                                Eliminada
+                            </label>
+                        </div>
+                    </div>
+                    <div class="listview">
+                        {% for acta in proyecto.acta_set.all%}
+                            {% for tema in acta.tema_set.all %}
+                                {% for elemento in tema.elemento_set.all %}
+                                    {% if elemento.tipo_elemento == "Duda" %}
+                                        {% if elemento.estado_elemento == "Pendiente" %}
+                                            <div class="lv-item media elemento_dialogico" data-type="p">
+                                                <input type="hidden" value="{{ elemento.id }}"/>
+                                                <div class="media-body">
+                                                    <div class="lv-title">
+                                                        <span class="badge">P</span><span> {{ elemento.titulo_elemento }}</span>
+                                                    </div>
+
+                                        {% elif elemento.estado_elemento == "Resuelta" %}
+                                            <div class="lv-item media elemento_dialogico" data-type="r">
+                                            <input type="hidden" value="{{ elemento.id }}"/>
+                                                <div class="media-body">
+                                                    <div class="lv-title">
+                                                        <span class="badge">R</span><span> {{ elemento.titulo_elemento }}</span>
+                                                    </div>
+
+                                        {% elif elemento.estado_elemento == "Eliminada" %}
+                                            <div class="lv-item media elemento_dialogico" data-type="e">
+                                                <input type="hidden" value="{{ elemento.id }}"/>
+                                                <div class="media-body">
+                                                    <div class="lv-title">
+                                                        <span class="badge">E</span><span> {{ elemento.titulo_elemento }}</span>
+                                                    </div>
+                                        {% endif %}
+                                                    <div class="lv-actions actions dropdown">
+                                                        <a href="" data-toggle="dropdown" aria-expanded="true">
+                                                            <i class="md md-more-vert"></i>
+                                                        </a>
+
+                                                        <ul class="dropdown-menu dropdown-menu-right">
+                                                            <li>
+                                                                <a href="#">Cambiar estado</a>
+                                                            </li>
+                                                            <li class="divider"></li>
+                                                            <li>
+                                                                <a href="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/editar_acta/{{ acta.id }}/">Ver acta</a>
+                                                            </li>
+                                                        </ul>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                    {% endif %}
+                                {% endfor %}
+                            {% endfor %}
+                        {% endfor %}
+                        <a class="lv-footer" href="">Ver todos</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    <script type="text/javascript">
+    function itemFilter(id){
+        $(id+' .card-filters').find('input:checkbox').on('click', function () {
+            $(id+ ' .lv-item').hide();
+            $(id+' .card-filters').find('input:checked').each(function () {
+                var dt = $(this).attr('rel');
+                $(id+' .lv-item').each(function(){
+                    if(dt === $(this).attr('data-type')){
+                        $(this).show()
+                    }
+                })
+            });
+        });
+    }
+
+    $(function () {
+        $('#fecha_inicio').datetimepicker({
+            format: 'DD/MM/YYYY'
+        });
+        $('#fecha_termino').datetimepicker({
+            format: 'DD/MM/YYYY'
+        });
+    });
+
+    $(document).ready(function () {
+        var dialogic_elements = ['#compromisos','#acuerdos','#dudas','#desacuerdos']; /* acá van los id de las columnas */
+        dialogic_elements.forEach(itemFilter);
+
+        $('#compromisos').on('click',function(){
+            $(this).children('i.md').each(function(){
+                if($(this).is('.md-expand-more'))
+                    $(this).removeClass('md-expand-more').addClass('md-expand-less');
+                else
+                    $(this).removeClass('md-expand-less').addClass('md-expand-more');
+            });
+        });
+
+        $('#acuerdos').on('click',function(){
+            $(this).children('i.md').each(function(){
+                if($(this).is('.md-expand-more'))
+                    $(this).removeClass('md-expand-more').addClass('md-expand-less');
+                else
+                    $(this).removeClass('md-expand-less').addClass('md-expand-more');
+            });
+        });
+
+        $('#dudas').on('click',function(){
+            $(this).children('i.md').each(function(){
+                if($(this).is('.md-expand-more'))
+                    $(this).removeClass('md-expand-more').addClass('md-expand-less');
+                else
+                    $(this).removeClass('md-expand-less').addClass('md-expand-more');
+            });
+        });
+
+        $('#desacuerdos').on('click',function(){
+            $(this).children('i.md').each(function(){
+                if($(this).is('.md-expand-more'))
+                    $(this).removeClass('md-expand-more').addClass('md-expand-less');
+                else
+                    $(this).removeClass('md-expand-less').addClass('md-expand-more');
+            });
+        });
+
+        $('#filtros').on('click',function(){
+            $(this).children('i.md').each(function(){
+                if($(this).is('.md-expand-more'))
+                    $(this).removeClass('md-expand-more').addClass('md-expand-less');
+                else
+                    $(this).removeClass('md-expand-less').addClass('md-expand-more');
+            });
+        });
+
+        $('#filtrar_elementos').on('click', function(){
+            $.ajax({
+                async: true,
+                type: 'post',
+                url: '/{{ proyecto.id }}/filtrar_elementos/',
+                data:{
+                    'nombre_elemento': $('#nombre_elemento').val(),
+                    'fecha_inicio': $('#fecha_inicio').val(),
+                    'fecha_termino': $('#fecha_termino').val(),
+                    'usuarios_responsables': $('#miembros_proyecto').val(),
+                    'texto_en_discusion': $('#discusion_elemento').val()
+                },
+                beforeSend: function () {
+                    //$('#loading').fadeIn(100);
+                },
+                success: function (response) {
+                    //Falta eliminar del HTML del calendario. Podría hacerlo refrescando la página, y si se elimino, se muestra el swal
+                    console.log("elementos filtrados son "+response['elementos_filtrados']);
+                    $( ".elemento_dialogico" ).each(function( index ) {
+                        var eliminar = true;
+                        for(i=0;i<response['elementos_filtrados'].length;i++){
+                            var elemento_filtrado = response['elementos_filtrados'][i];
+                            var elemento = $(this).find('input:first').val();
+                            if (elemento == elemento_filtrado) {
+                                eliminar = false;
+                            }
+                        }
+                        if (eliminar) {
+                            $(this).hide();
+                        }
+                        else{
+                            $(this).show();
+                        }
+                    });
+                },
+                timeout: 8000,
+                error: function (jqXHR, textStatus, errorThrown) {
+                    //swal("Error", "Hubo un problema al filtrar los elementos o la petición tardó demasiado. Por favor intente nuevamente o contactese con el administrador.", "error");
+                    console.log("Error:"+errorThrown);
+                }
+            });
+        });
+
+    });
+</script>
+{% endblock %}

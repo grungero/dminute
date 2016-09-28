@@ -1,0 +1,312 @@
+{% extends 'walo-template/proyectos/base.html' %}
+
+{% block menu_activo %}
+    <li class="waves-effect"><a href="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/">Acerca del Proyecto</a></li>
+    <li class="active waves-effect"><a href="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/calendario_actas/">Actas Dialógicas</a></li>
+    <li class="waves-effect"><a href="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/sintesis_dialogica/">Síntesis Dialógica</a></li>
+{% endblock %}
+
+{% block contenido_menu_escogido %}
+    {% if successAgregarActa %}
+        <div class="alert alert-success alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+            <strong>Acta agregada exitósamente!</strong>
+        </div>
+    {% endif %}
+    {% if successEditarActa %}
+        <div class="alert alert-success alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+            <strong>Acta editada exitósamente!</strong>
+        </div>
+    {% endif %}
+    {% if prohibido_editar %}
+        <div class="alert alert-danger alert-dismissible" role="alert">
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">×</span></button>
+            <strong>Usted no tiene permisos para editar el acta</strong>
+        </div>
+    {% endif %}
+    <ul class="p-menu">
+        <li><a href="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/kanban/"><i class="md md-view-column hidden-xs"></i> Ir a Tablero Kanban</a></li>
+        <li><a href="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/agregar_acta/"><i class="md md-assignment hidden-xs"></i> Agregar Reunión</a></li>
+        <!--<li class="pm-search">
+            <div class="pms-inner">
+                <i class="md md-search"></i>
+                <input type="text" placeholder="Buscar en el calendario..." autofocus>
+            </div>
+        </li>-->
+    </ul>
+    <div class="col-sm-4">
+        <div class="card">
+            <div class="card-header ch-alt m-b-20">
+                <h2>Listado de reuniones</h2>
+
+                <!--<button id="add-acta" class="btn bgm-cyan btn-float waves-effect waves-button waves-float"><i class="md md-add"></i></button>-->
+            </div>
+            <div class="card-body">
+                <div class="listview">
+
+                    {% for actas in actas_proyecto %}
+
+                        <div class="lv-item media" id="acta_{{ actas.id }}">
+                            <div class="media-body">
+                                <div class="lv-title">Reunión {{ forloop.counter }}</div>
+
+                                {% for acta_usuario in actas.usuario_acta_set.all %}
+                                    {% if acta_usuario.usuario.user == user and acta_usuario.secretario or es_jefe %} <!-- Si el usuario del acta es el usuario logueado Y es secretario del acta O si es jefe del proyecto-->
+                                        <div class="lv-actions actions dropdown">
+                                            <a href="" data-toggle="dropdown" aria-expanded="true">
+                                                <i class="md md-more-vert"></i>
+                                            </a>
+
+                                            <ul class="dropdown-menu dropdown-menu-right">
+                                                <li>
+                                                    <a href="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/editar_acta/{{ actas.id }}/">Editar</a>
+                                                </li>
+                                                <li>
+                                                    <a id="eliminar_acta" href="#" onclick="eliminar_acta({{ proyecto.id }},{{ actas.id }});return false;">Eliminar</a>
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    {% endif %}
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endfor %}
+
+                    <a class="lv-footer"></a>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="col-sm-8">
+        <div id="calendar"></div>
+    </div>
+
+
+
+    <script type="text/javascript">
+        $(document).ready(function() {
+            var date = new Date();
+            var d = date.getDate();
+            var m = date.getMonth();
+            var y = date.getFullYear();
+            var numero_reunion = 0;
+            var cId = $('#calendar');
+
+            //Generate the Calendar
+            cId.fullCalendar({
+                header: {
+                    right: '',
+                    center: 'prev, title, next',
+                    left: ''
+                },
+
+                theme: true, //Do not remove this as it ruin the design
+                selectable: true,
+                selectHelper: true,
+                Editarable: true,
+
+                //Add Events
+                events: [
+                    {% for actas in actas_proyecto %}
+                        {
+                            title: "Reunión "+{{ forloop.counter }},
+                            start: new Date({{ actas.fecha_acta|date:"Y" }}, {{ actas.fecha_acta|date:"m" }}-1, {{ actas.fecha_acta|date:"d" }}),
+                            allDay: true,
+                            className: 'bgm-red'
+                        },
+                    {% endfor %}
+                    /*
+                    {
+                        title: 'Acta 1',
+                        start: new Date(y, m, 1),
+                        allDay: true,
+                        className: 'bgm-cyan'
+                    },
+                    {
+                        title: 'Acta 2',
+                        start: new Date(y, m, 10),
+                        allDay: true,
+                        className: 'bgm-red'
+                    },
+                    {
+                        title: 'Acta 3',
+                        start: new Date(y, m, 18),
+                        allDay: true,
+                        className: 'bgm-blue'
+                    },
+                    {
+                        title: 'Acta 4',
+                        start: new Date(y, m, 20),
+                        allDay: true,
+                        className: 'bgm-green'
+                    },
+                    {
+                        title: 'Acta 5',
+                        start: new Date(y, m, 5),
+                        allDay: true,
+                        className: 'bgm-purple'
+                    },
+                    {
+                        title: 'Acta 6',
+                        start: new Date(y, m, 21),
+                        allDay: true,
+                        className: 'bgm-orange'
+                    },
+                    {
+                        title: 'Acta 7',
+                        start: new Date(y, m, 5),
+                        allDay: true,
+                        className: 'bgm-dark'
+                    },
+                    {
+                        title: 'Acta 9',
+                        start: new Date(y, m, 1),
+                        allDay: true,
+                        className: 'bgm-purple'
+                    },
+                    {
+                        title: 'Acta 10',
+                        start: new Date(y, m, 15),
+                        allDay: true,
+                        className: 'bgm-orange'
+                    },
+                    {
+                        title: 'Acta 11',
+                        start: new Date(y, m, 25),
+                        allDay: true,
+                        className: 'bgm-blue'
+                    },
+                    {
+                        title: 'Acta 12',
+                        start: new Date(y, m, 30),
+                        allDay: true,
+                        className: 'bgm-orange'
+                    },
+                    {
+                        title: 'Acta 13',
+                        start: new Date(y, m, 30),
+                        allDay: true,
+                        className: 'bgm-dark'
+                    },
+                    */
+                ],
+
+                //On Day Select
+                select: function(start, end, allDay) {
+                    $('#addNew-event').modal('show');
+                    $('#addNew-event input:text').val('');
+                    $('#getStart').val(start);
+                }
+            });
+
+            //Create and ddd Action button with dropdown in Calendar header.
+            var actionMenu = '<ul class="actions actions-alt" id="fc-actions">' +
+                                '<li class="dropdown">' +
+                                    '<a href="" data-toggle="dropdown"><i class="md md-more-vert"></i></a>' +
+                                    '<ul class="dropdown-menu dropdown-menu-right">' +
+                                        '<li class="active">' +
+                                            '<a data-view="month" href="">Vista mes</a>' +
+                                        '</li>' +
+                                        '<li>' +
+                                            '<a data-view="basicWeek" href="">Vista semanal</a>' +
+                                        '</li>' +
+                                        '<li>' +
+                                            '<a data-view="agendaWeek" href="">Vista agenda semanal</a>' +
+                                        '</li>' +
+                                        '<li>' +
+                                            '<a data-view="basicDay" href="">Vista diaria</a>' +
+                                        '</li>' +
+                                        '<li>' +
+                                            '<a data-view="agendaDay" href="">Vista agenda diaria</a>' +
+                                        '</li>' +
+                                    '</ul>' +
+                                '</div>' +
+                            '</li>';
+
+            cId.find('.fc-toolbar').append(actionMenu);
+
+            //Event Tag Selector
+            (function(){
+                $('body').on('click', '.event-tag > span', function(){
+                    $('.event-tag > span').removeClass('selected');
+                    $(this).addClass('selected');
+                });
+            })();
+
+            //Add new Event
+            $('body').on('click', '#addEvent', function(){
+                var eventName = $('#eventName').val();
+                var tagColor = $('.event-tag > span.selected').attr('data-tag');
+
+                if (eventName != '') {
+                    //Render Event
+                    $('#calendar').fullCalendar('renderEvent',{
+                        title: 'Acta X',
+                        start: $('#getStart').val(),
+                        end:  $('#getEnd').val(),
+                        allDay: true
+
+                    },true ); //Stick the event
+
+                    $('#addNew-event form')[0].reset()
+                    $('#addNew-event').modal('hide');
+                }
+
+                else {
+                    $('#eventName').closest('.form-group').addClass('has-error');
+                }
+            });
+
+            //Calendar views
+            $('body').on('click', '#fc-actions [data-view]', function(e){
+                e.preventDefault();
+                var dataView = $(this).attr('data-view');
+
+                $('#fc-actions li').removeClass('active');
+                $(this).parent().addClass('active');
+                cId.fullCalendar('changeView', dataView);
+            });
+
+            $('body').on('click', '#add-acta', function(e){
+                //e.preventDefault();
+                $('#addNew-event').modal('show');
+                $('#addNew-event input:text').val('');
+                $('#getStart').val(start);
+            });
+
+        });
+        function eliminar_acta(proyecto,acta){
+            swal({
+            title: "¿Estás seguro?",
+            text: "El acta, sus temas, elementos y tareas serán eliminados permanentemente.",
+            type: "warning",
+            showCancelButton: true,
+            confirmButtonColor: "#DD6B55",
+            confirmButtonText: "Sí, eliminar",
+            cancelButtonText: "Cancelar",
+            closeOnConfirm: false
+            }, function(){
+                $.ajax({
+                    async: true,
+                    type: 'post',
+                    url: 'http://{{ request.get_host }}/proyectos/ver_proyecto/'+proyecto+'/eliminar_acta/',
+                    data: {'id_acta': acta},
+                    beforeSend: function () {
+                        //$('#loading').fadeIn(100);
+                    },
+                    success: function (response) {
+                        //Falta eliminar del HTML del calendario. Podría hacerlo refrescando la página, y si se elimino, se muestra el swal
+                        $('#acta_'+acta).remove();
+                        swal("¡Acta eliminada!", "El acta ha sido eliminado exitósamente.", "success");
+                    },
+                    timeout: 8000,
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        swal("Error", "Hubo un problema al eliminar el acta. Por favor intente nuevamente o contacto al administrador.", "error");
+                        console.log("Error:"+errorThrown);
+                    }
+                });
+            });
+        }
+    </script>
+{% endblock %}
