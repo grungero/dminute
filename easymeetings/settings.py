@@ -68,10 +68,10 @@ DATABASES = {
     "default": {
         #"ENGINE": "django.db.backends.postgresql_psycopg2",
         "ENGINE": "django.db.backends.postgresql_psycopg2",
-        "NAME": "easymeetingsdb",
-        "USER": "root",
-        "PASSWORD": "andres1982316",
-        "HOST": "localhost",
+        "NAME": "dbl3pif47ou8ek",
+        "USER": "isvoxtygstrnxk",
+        "PASSWORD": "glA3pQDd8CYsa7jEyYGZSJmBWg",
+        "HOST": "ec2-54-83-31-65.compute-1.amazonaws.com",
         "PORT": "5432",
     }
 }
