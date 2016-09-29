@@ -71,8 +71,9 @@ def ir_detalle_proyecto(request, id_proyecto, acta_id = None):
     if user_proyecto_logueado.rol_proyecto == "Jefe":
         es_jefe = True
     temas_acta = Tema.objects.filter(acta_tema=acta)
-
-    elementos_tema = Elemento.objects.filter(tema__in=temas_acta)
+    elementos_tema = {}
+    for ta in temas_acta:
+        elementos_tema[ta.id] = Elemento.objects.filter(tema=ta)
     data = {
         'acta_seleccionada':acta_seleccionada,
         'es_jefe':es_jefe,

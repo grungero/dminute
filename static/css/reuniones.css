@@ -58,3 +58,11 @@
 .titulo-tema{
   font-weight:bold;
 }
+
+.panel-body{
+  padding:0px;
+}
+
+.compromiso-tema-d{
+  margin-top: 15px;
+}

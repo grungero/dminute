@@ -1,5 +1,5 @@
 {% extends 'walo-template/base.html' %}
-{% load staticfiles %}
+{% load staticfiles %} {% load web_utils %}
 
 {% block load_css %}
 <link href="{% static "css/reuniones.css" %}" rel="stylesheet">
@@ -89,7 +89,7 @@
                                 <div class="tab-content detalle-reunion">
                                     <div class="panel">
                                         <div class="panel-heading ">
-                                            <span style="font-weight:bold;">Reunión {{acta.id}}</span><span style="margin-left:30px;">{{ acta.fecha_acta|date:"d/m/Y" }}</span> <span class="detalle-reunion-asistentes"><a href="#">Asistentes</a></span>
+                                            <span style="font-weight:bold;">Reunión {{acta.id}}</span><span style="margin-left:30px;">{{ acta.fecha_acta|date:"d/m/Y" }}</span> <span><a style="color: #000000;" data-toggle="modal" data-target="#modal-agregar-tema" class="btn bgm-lightblue btn-float waves-effect waves-button waves-float"><i class="md md-add"></i></a></span><span class="detalle-reunion-asistentes"><a href="#">Asistentes</a></span>
                                             <div style="margin-top:20px;font-weight:bold;">
                                                 <p style="margin-bottom:0px;">Resumen de la reunión</p>  
                                             </div>
@@ -100,20 +100,31 @@
                                         </div>
                                         <hr/>
                                         <div class="panel-body">
-                                           {% for t in temas_acta %}
-                                           <div>
-                                               <div class="titulo-tema">
-                                                   {{t.titulo_tema}}
-                                               </div>
-                                               <div class="descripcion-tema">
-                                                   {{t.descripcion_tema}}
-                                                   <div class="compromiso-tema-d">
-                                                       {% for e in elementos_tema %}
-                                                        {{e.titulo_elemento}}
-                                                       {% endfor %}
-                                                   </div>
-                                               </div>
-                                           </div>
+                                            {% for t in temas_acta %}
+                                            <div>
+                                                <div class="titulo-tema">
+                                                    {{t.titulo_tema}}
+                                                </div>
+                                                <div class="descripcion-tema">
+                                                    {{t.descripcion_tema}}
+                                                    <br/>
+                                                    <div class="compromiso-tema-d">
+                                                    <label>Compromisos</label>
+                                                        <div class="detalle-compromiso-tema-d">
+                                                            <ul>
+                                                                {% for key,value in elementos_tema.items %}
+                                                                    {% if key == t.id %}
+                                                                        {% for v in value %}
+                                                                        <li><a href="#">{{v.tipo_elemento|get_codigo_tipo}} - {{v.titulo_elemento}}</a></li>
+                                                                        {% endfor %}
+                                                                    {% endif %}
+                                                                {% endfor %}
+                                                            </ul>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <hr/>
                                            
                                            {% endfor %}
                                         </div>
@@ -926,170 +937,8 @@
                     </form>
                 </div>
 
-                <div class="modal fade" id="modal-agregar-tema" name="modal-agregar-tema">
-                    <div class="modal-dialog">
-                        <div class="modal-content">
-                            <div class="modal-header">
-                                <h4 class="modal-title">Agregar tema</h4>
-                            </div>
-                            <div class="modal-body">
-                                <div class="row">
-                                    <div class="col-xs-12 m-b-10">
-                                        <div class="form-group fg-float">
-                                            <div class="fg-line">
-                                                <input id="nombre_tema" maxlength="50" type="text" class="form-control fg-input">
-                                            </div>
-                                            <label class="fg-label">Nombre del tema</label>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-sm-12">
-                                        <h5>Discusión</h5>
-                                        <div class="fg-line">
-                                            <div id="descripcion_tema" class="summernote" ></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="modal-footer">
-                                <button type="button" class="btn btn-link waves-effect" data-dismiss="modal" onclick="javascript: $('.note-editable').text('');">Cancelar</button>
-                                <button type="button" id="agregar_tema" name="agregar_tema" class="btn bgm-blue waves-effect">Agregar</button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-                    <div class="modal fade" id="modal-agregar-elemento" name="modal-agregar-elemento">
-                        <div class="modal-dialog">
-                            <div class="modal-content">
-                                <div class="modal-header">
-                                    <h4 class="modal-title">Agregar elemento dialógico</h4>
-                                </div>
-                                <div class="modal-body">
-                                    <div class="row">
-                                        <div class="col-sm-6 m-b-20">
-                                            <p class="f-500 m-b-10 c-black">Tipo de elemento</p>
-
-                                            <select class="selectpicker" id="tipo_elemento">
-                                                <option value="Compromiso">Compromiso</option>
-                                                <option value="Acuerdo">Acuerdo</option>
-                                                <option value="Desacuerdo">Desacuerdo</option>
-                                                <option value="Duda">Duda</option>
-                                            </select>
-                                        </div>
-                                        <div class="col-sm-6 m-b-10">
-                                            <p class="f-500 m-b-10 c-black">Estado</p>
-
-                                            <select class="selectpicker" id="estado_elemento">
-
-                                                <!-- Estados compromisos -->
-                                                <option name="estado_compromiso">Pendiente por asignar</option>
-                                                <option name="estado_compromiso" data-subtext="No ha empezado a realizarlo">Asignado</option>
-                                                <option name="estado_compromiso" data-subtext="Asignado y se está realizando">En curso</option>
-                                                <option name="estado_compromiso">Completado</option>
-                                                <option name="estado_compromiso">Eliminado</option>
-
-                                                <!-- Estados acuerdos y desacuerdos -->
-                                                <option name="estado_acuerdo" style="display:none;">Vigente</option>
-                                                <option name="estado_acuerdo" style="display:none;">Eliminado</option>
-
-                                                <!-- Estados dudas -->
-                                                <option name="estado_duda" style="display:none;">Pendiente</option>
-                                                <option name="estado_duda" style="display:none;">Resuelta</option>
-                                                <option name="estado_duda" style="display:none;">Eliminada</option>
-
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="row" id="usuario_responsable_compromiso" style="display:none;">
-                                        <div class="col-sm-12 m-b-20">
-                                            <p class="f-500 m-b-10 c-black">Persona asignada</p>
-                                            <select class="selectpicker" id="responsable_elemento" data-size="5">
-                                                {% for user_proyecto in usuarios_proyecto %}
-                                                    <option value="{{ user_proyecto.usuario.id }}">{{ user_proyecto.usuario.user.first_name }} {{ user_proyecto.usuario.user.last_name }}</option>
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div class="row">
-                                        <div class="col-sm-12 m-b-20">
-                                            <h5>Nombre</h5>
-                                            <div class="fg-line">
-                                                <textarea class="form-control auto-size" placeholder="Ingrese nombre" id="nombre_elemento" maxlength="50"></textarea>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-sm-12 m-b-20">
-                                            <h5>Descripción</h5>
-                                            <div class="fg-line">
-                                                <textarea rows="5" maxlength="600" class="form-control" placeholder="Ingrese ..." id="descripcion_elemento"></textarea>
-                                                <!--<textarea rows="5" maxlength="600" id="descripcion_elemento" class="summernote"></textarea>-->
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-sm-6 m-b-10">
-                                            <div class="form-group fg-line">
-                                                <label>Fecha Inicio</label>
-                                                <input name="fecha_inicio" id="fecha_inicio" type="text" class="form-control input-mask" data-mask="00/00/0000" placeholder="ej: 23/05/2014" maxlength="10" autocomplete="off">
-                                            </div>
-                                        </div>
-                                        <div class="col-sm-6 m-b-10">
-                                            <div class="form-group fg-line">
-                                                <label>Fecha Término</label>
-                                                <input name="fecha_termino" id="fecha_termino" type="text" class="form-control input-mask" data-mask="00/00/0000" placeholder="ej:01/06/2014" maxlength="10" autocomplete="off">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-sm-12 m-b-20">
-                                            <p class="f-500 m-b-10 c-black">Definir elemento que lo genera</p>
-                                            <select class="selectpicker" id="elemento_padre" data-size="5" data-live-search="true">
-                                                <option value="">NO TIENE</option>
-                                                {% for actas in proyecto.acta_set.all %}
-                                                    {% for temas in actas.tema_set.all %}
-                                                        {% for elemento in temas.elemento_set.all %}
-                                                            {% if elemento.titulo_elemento|length < 80 %}
-                                                                <option value="{{ elemento.id }}">
-                                                                    {% if elemento.tipo_elemento == "Compromiso" %}
-                                                                        CO
-                                                                    {% elif elemento.tipo_elemento == "Acuerdo" %}
-                                                                        AC
-                                                                    {% elif elemento.tipo_elemento == "Duda" %}
-                                                                        DU
-                                                                    {% elif elemento.tipo_elemento == "Desacuerdo" %}
-                                                                        DE
-                                                                    {% endif %}.{{ elemento.titulo_elemento }}
-                                                                </option>
-                                                            {% else %}
-                                                                <option value="{{ elemento.id }}">
-                                                                    {% if elemento.tipo_elemento == "Compromiso" %}
-                                                                        CO
-                                                                    {% elif elemento.tipo_elemento == "Acuerdo" %}
-                                                                        AC
-                                                                    {% elif elemento.tipo_elemento == "Duda" %}
-                                                                        DU
-                                                                    {% elif elemento.tipo_elemento == "Desacuerdo" %}
-                                                                        DE
-                                                                    {% endif %}.{{ elemento.titulo_elemento|truncatechars:80 }}
-                                                                </option>
-                                                            {% endif %}
-                                                        {% endfor %}
-                                                    {% endfor %}
-                                                {% endfor %}
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="modal-footer">
-                                    <button type="button" class="btn btn-link waves-effect" data-dismiss="modal">Cancelar</button>
-                                    <button type="button" id="agregar_elemento" class="btn bgm-blue waves-effect">Agregar</button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
+                {% include 'walo-template/proyectos/reuniones/modals/agregar_tema.html' %}
+                {% include 'walo-template/proyectos/reuniones/modals/agregar_elemento.html' %}
 
                     <div class="modal fade" id="modal-ver-elemento" name="modal-ver-elemento">
                         <input type="hidden" value="" id="elemento_a_editar" name="elemento_a_editar">
