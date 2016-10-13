@@ -49,9 +49,9 @@ def agregar_proyecto(request):
             correo = user.user.username
 
             #Solo envia correo si es direccion valida
-            if valida_correo(correo):
-                mensaje = 'Estimado %s, Ud ha sido añadido como miembro del proyecto titulado %s. El jefe de proyecto es %s %s. Ingresa a meetingviewer.herokuapp.com para revisarlo!' %(user.user.first_name, proyecto.nombre_proyecto, user_jefe.user.first_name, user_jefe.user.last_name)
-                send_mail('Has sido añadido a un nuevo proyecto!',mensaje, 'meeting.viewer@gmail.com',[user.user.username], fail_silently=False)
+            #if valida_correo(correo):
+            #    mensaje = 'Estimado %s, Ud ha sido añadido como miembro del proyecto titulado %s. El jefe de proyecto es %s %s. Ingresa a meetingviewer.herokuapp.com para revisarlo!' %(user.user.first_name, proyecto.nombre_proyecto, user_jefe.user.first_name, user_jefe.user.last_name)
+            #    send_mail('Has sido añadido a un nuevo proyecto!',mensaje, 'meeting.viewer@gmail.com',[user.user.username], fail_silently=False)
         proyectos_activos = lista_proyectos_activos(request.user.username)
         ctx = {'successAgregar': True, 'lista_usuarios':posibles_miembros, 'lista_proyectos_activos':proyectos_activos, 'proyecto_agregado':proyecto}
     else:
