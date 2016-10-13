@@ -72,31 +72,37 @@
                             <!-- Nav tabs -->
                                 <ul class="nav nav-pills nav-stacked">
                                     <li>
-                                        <div class="panel panel-principal panel-nueva-reunion">
-                                            <div class="panel-body">
-                                                <span class="glyphicon glyphicon-plus"></span>&nbsp;Nueva Reunion    
-                                            </div>
-                                            
-                                        </div></li>
+                                        <a style="color: #000000;" data-toggle="modal" data-target="#modal-agregar-reunion" class="panel-nueva-reunion btn bgm-lightblue waves-effect waves-button waves-float"><i class="md md-add"></i>Nueva Reunion</a>
+                                    </li>
                                     <hr/>
                                     {% for acta in listas_actas %}
-                                    <li class="{% if acta_seleccionada == acta.id %}active{%endif%} lista-reuniones" id="lista-reuniones-{{acta.id}}"><a href="#">Reunion {{acta.id}}</a></li>
+                                    <li class="{% if acta_seleccionada == acta.id %}active{%endif%} lista-reuniones" id="lista-reuniones-{{acta.id}}"><a href="{% url 'ver_panel_proyecto' id_proyecto=proyecto.id id_acta=acta.id %}">Reunion {{acta.id}}</a></li>
                                     {%endfor%}
                                 </ul>
                             </div>
+                            {% if not listas_actas %}
+                                <div class="text-center" style='color: green; margin-top:20px;'><strong>Aún no se han agregado reuniones!</strong></div>
+                            {% else %}
                             <div class="col-xs-10">
                             <!-- Tab panes -->
                                 <div class="tab-content detalle-reunion">
                                     <div class="panel">
                                         <div class="panel-heading ">
-                                            <span style="font-weight:bold;">Reunión {{acta.id}}</span><span style="margin-left:30px;">{{ acta.fecha_acta|date:"d/m/Y" }}</span> <span><a style="color: #000000;" data-toggle="modal" data-target="#modal-agregar-tema" class="btn bgm-lightblue btn-float waves-effect waves-button waves-float"><i class="md md-add"></i></a></span><span class="detalle-reunion-asistentes"><a href="#">Asistentes</a></span>
+                                            <span style="font-weight:bold;">Reunión {{acta.id}}</span>
+                                            <span style="margin-left:30px;">{{ acta.fecha_acta|date:"d/m/Y" }}</span>
+                                            <span class="detalle-reunion-asistentes">
+                                                <a style="color: #000000; width: 35px; height: 35px;" data-toggle="modal" data-target="#modal-agregar-tema" class="btn bgm-lightblue btn-float waves-effect waves-button waves-float">
+                                                    <i class="md md-add" style="margin-left: -5px; margin-top: -9px; height: 45px;"></i>
+                                                </a>
+                                                <a href="#" style="margin-left: 50px;">Asistentes</a>
+                                            </span>
                                             <div style="margin-top:20px;font-weight:bold;">
-                                                <p style="margin-bottom:0px;">Resumen de la reunión</p>  
+                                                <p style="margin-bottom:0px;">Resumen de la reunión</p>
                                             </div>
                                             <div>
-                                                {{acta.resumen_acta}} 
+                                                {{acta.resumen_acta}}
                                             </div>
-                                            
+
                                         </div>
                                         <hr/>
                                         <div class="panel-body">
@@ -125,22 +131,23 @@
                                                 </div>
                                             </div>
                                             <hr/>
-                                           
+
                                            {% endfor %}
                                         </div>
                                     </div>
                                 </div>
                             </div>
+                            {% endif %}
                             <div class="clearfix"></div>
 
-                        </div>    
+                        </div>
                     </div>
-                        
-                </div>
-                
 
-      
-                
+                </div>
+
+
+
+
                 </div>
 
                 <!-- Sección Tablero Kanban -->
@@ -841,102 +848,7 @@
                     </form>
                 </div>
 
-                <!--Sección de agregar reunión-->
-                <div id="div_agregar_acta" class="row" style="display:none;">
-                    <!-- bs-item z-depth-3 -->
-                    <form action="http://{{ request.get_host }}/proyectos/ver_proyecto/{{ proyecto.id }}/agregar_acta/" method="POST" role="form" id="agregar_acta_form" name="agregar_acta_form">
-                    {% csrf_token %}
-                        <div id="agregar_acta_body" class="container">
-
-                            <div class="block-header">
-                                <h2>Agregando Reunión <span id="num_siguiente_reunion"></span></h2>
-
-                                <ul class="actions">
-                                    <li>
-                                        <button onclick="cancelar_formularios('cancelar_agregar');" class="btn btn-danger btn-xs waves-effect">Cancelar</button>
-                                    </li>
-                                    <li>
-                                        <!--<a class="icon-pop" data-toggle="tooltip" data-placement="top" title="Guardar Acta" id="guardar_acta">
-                                            <i class="md md-save"></i>
-                                        </a>-->
-                                        <button onclick="submit_action=true; $('#miembro_logueado_presente').attr('disabled', false);" type="submit" class="btn btn-primary btn-xs waves-effect">Guardar Reunión</button>
-                                    </li>
-                                </ul>
-                            </div>
-
-                            <div class="row">
-                                <div class="col-xs-12 col-sm-12">
-                                    <div class="card">
-                                        <div class="card-header ch-alt">
-                                            <h2><a style="color: #000000;" class="collapse-trigger" href="#encabezado-body" data-toggle="collapse"><i class="md md-expand-more"></i> Encabezado</a>
-
-                                            </h2>
-                                            <!--<a data-toggle="modal" href="#moda-compromisos_pendientes" class="btn bgm-orange btn-float waves-effect waves-button waves-float"><i class="md md-add"></i></a>-->
-                                        </div>
-                                        <div class="card-body collapse in" id="encabezado-body" style="max-height: 400px; overflow-x:hidden; overflow-y: auto;">
-                                            <div class="card-body card-padding collapse in" id="detalles-acta-body">
-                                                <div class="row">
-                                                    <div class="col-sm-12 m-b-10">
-                                                        <div class="form-group fg-line">
-                                                            <label>Fecha</label>
-                                                            <input id="agregar_acta_fecha" name="agregar_acta_fecha" type="text" class="form-control input-mask" data-mask="00/00/0000" placeholder="ej: 23/05/2014" maxlength="10" autocomplete="off">
-                                                        </div>
-                                                    </div>
-                                                    <div class="col-sm-12 m-b-20">
-                                                        <p class="f-500 m-b-10 c-black">Asistentes</p>
-                                                         <select id="agregar_acta_miembros_presentes" name="agregar_acta_miembros_presentes" class="selectpicker" multiple data-size="5">
-                                                            {% for user_proyecto in usuarios_proyecto %}
-                                                                {% if user.id == user_proyecto.usuario.user.id %}
-                                                                    <option id="miembro_logueado_presente" selected disabled value="{{ user_proyecto.usuario.id }}">{{ user_proyecto.usuario.user.first_name }} {{ user_proyecto.usuario.user.last_name }}</option>
-                                                                {% else %}
-                                                                    <option value="{{ user_proyecto.usuario.id }}">{{ user_proyecto.usuario.user.first_name }} {{ user_proyecto.usuario.user.last_name }}</option>
-                                                                {% endif %}
-                                                            {% endfor %}
-                                                        </select>
-                                                    </div>
-                                                </div>
-                                                <div class="row">
-                                                    <div class="col-sm-12">
-                                                        <h4>Resumen de la reunión</h4>
-                                                        <div class="fg-line">
-                                                            <textarea rows="5" id="agregar_acta_resumen" name="agregar_acta_resumen" maxlength="600" class="form-control auto-size" placeholder="Ingrese ..."></textarea>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="col-xs-12 col-md-12">
-                                    <div class="card">
-                                        <div class="card-header ch-alt">
-                                            <h2>Desarrollo</h2>
-                                            <a style="color: #000000;" data-toggle="modal" data-target="#modal-agregar-tema" class="btn bgm-lightblue btn-float waves-effect waves-button waves-float"><i class="md md-add"></i></a>
-                                        </div>
-                                        <div id="tablero_temas" name="tablero_temas" class="card-body card-padding" style="max-height: 400px; overflow-x:hidden; overflow-y: auto;">
-
-                                            <!-- Temas añadidos -->
-
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <!--
-                            <div class="row">
-                                <div class="col-xs-12 text-right">
-                                    <button class="btn bgm-blue waves-effect waves-button waves-float">Guardar <i class="md md-lg md-save"></i></button>
-                                </div>
-                            </div>
-                            -->
-                        </div>
-
-                        <input type="hidden" id="cantidad_total_temas" name="cantidad_total_temas" value="0"/>
-                        <!-- Modales de Agregar Tema y Agregar Elemento -->
-
-                        </div>
-                    </form>
-                </div>
-
+                {% include 'walo-template/proyectos/reuniones/modals/agregar_reunion.html' %}
                 {% include 'walo-template/proyectos/reuniones/modals/agregar_tema.html' %}
                 {% include 'walo-template/proyectos/reuniones/modals/agregar_elemento.html' %}
 
@@ -1226,93 +1138,7 @@
                             });
                             $("[data-hover='tooltip']").tooltip({'placement': 'top'});
                             //Agregamos un tema
-                            $('#agregar_tema').on('click',function(data) {
 
-                                //Variables del tema
-                                nombre_tema = $('#nombre_tema').val();
-
-                                descripcion_tema = $('#descripcion_tema').code();
-                                var descripcion_tema_input = htmlEscape(descripcion_tema);
-                                //descripcion_tema_input = $('<div/>').text(descripcion_tema).html();
-                                //var descripcion_mostrada = $('<div/>').html(descripcion_tema).text();
-                                /*
-                                * Agregamos el div del nuevo tema
-                                * Se comienza añadiendo cant_elementos = 0. Cada vez que se agregue uno, se actualiza la cantidad.
-                                * */
-                                //El div id="tema..." tal vez puede sacarse
-                                var tablero_temas = "";
-                                if(editando){
-                                    tablero_temas = "editar_tablero_temas";
-                                    cant_temas = parseInt($('#editar_reunion_cantidad_total_temas').val())+1;
-                                }
-                                else{
-                                    cant_temas = cant_temas + 1;
-                                    tablero_temas = "tablero_temas";
-                                }
-                                //style="color: #000000;"ch-alt m-b-20
-                                $('#'+tablero_temas).append(
-                                    '<div class="row" id="tema_'+cant_temas+'">\
-                                        <div id="tema_'+cant_temas+'" class="col-xs-10 col-sm-11">\
-                                        <input type="hidden" id="cant_elementos_tema_'+cant_temas+'" name="cant_elementos" value="0"/>\
-                                        <input type="hidden" id="tema_'+cant_temas+'_nombre" name="nombre_tema" value="'+nombre_tema+'"/>\
-                                        <input type="hidden" id="tema_'+cant_temas+'_descripcion" name="descripcion_tema" value="'+descripcion_tema_input+'"/>\
-                                        <input type="hidden" id="tema_'+cant_temas+'_id" name="id_tema" value=""/>\
-                                            <div class="card">\
-                                                <div class="card-header ch-alt">\
-                                                    <h2><a style="color: #000000;" class="collapse-trigger" href="#tema-body-'+cant_temas+' " data-toggle="collapse"><i class="md md-expand-more"></i><span id="tema_'+cant_temas+'_nombre_mostrado">'+nombre_tema+'</span></a></h2>\
-                                                    <hr>\
-                                                    <i style="color: #000000;" class="md md-comment"></i> <medium id="tema_'+cant_temas+'_descripcion_mostrada">'+descripcion_tema+'</medium>\
-                                                    <ul class="actions">\
-                                                        <li>\
-                                                            <a data-toggle="modal" href="#modal-agregar-elemento" onClick="modalAbierto('+cant_temas+')">\
-                                                                <i class="md md-add"></i>\
-                                                            </a>\
-                                                        </li>\
-                                                        <li>\
-                                                            <a data-toggle="modal" href="#modal-ver-tema" onClick="ver_tema('+cant_temas+')">\
-                                                                <i class="md md-create"></i>\
-                                                            </a>\
-                                                        </li>\
-                                                        <li>\
-                                                            <a id="eliminar_tema_'+cant_temas+'" name="eliminar_tema" onClick="eliminar_tema('+cant_temas+')" >\
-                                                                <i class="md md-delete"></i>\
-                                                            </a>\
-                                                        </li>\
-                                                    </ul>\
-                                                </div>\
-                                                <input type="hidden" name="agregar_acta_temas" id="agregar_acta_temas_'+cant_temas+'">\
-                                                <div id="tema-body-'+cant_temas+'" class="card-body collapse in">\
-                                                    <div class="row">\
-                                                        <div class="col-xs-12">\
-                                                            <div class="listview lv-bordered" id="elementos_tema_'+cant_temas+'">\
-                                                            </div>\
-                                                        </div>\
-                                                    </div>\
-                                                </div>\
-                                            </div>\
-                                        </div>\
-                                    </div>\
-                                ');
-
-                                if (editando) {
-
-                                    $('#editar_reunion_cantidad_total_temas').val( function( index, val ) {
-                                        return +val+1;
-                                    });
-                                }
-                                else {
-                                    $('#cantidad_total_temas').val( function( index, val ) {
-                                        return +val+1;
-                                    });
-                                }
-
-
-
-                                $('#modal-agregar-tema').modal('hide').find('input, textarea').each(function(){
-                                    $(this).val('');
-                                    $('.note-editable').text('');
-                                });
-                            });
 
                             //Agregamos un tema
                             $('#agregar_elemento').on('click',function(data) {

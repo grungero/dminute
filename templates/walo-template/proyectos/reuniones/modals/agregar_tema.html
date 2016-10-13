@@ -1,33 +1,37 @@
 <div class="modal fade" id="modal-agregar-tema" name="modal-agregar-tema">
     <div class="modal-dialog">
         <div class="modal-content">
-            <div class="modal-header">
-                <h4 class="modal-title">Agregar tema</h4>
-            </div>
-            <div class="modal-body">
-                <div class="row">
-                    <div class="col-xs-12 m-b-10">
-                        <div class="form-group fg-float">
-                            <div class="fg-line">
-                                <input id="nombre_tema" maxlength="50" type="text" class="form-control fg-input">
+            <form method="POST" action="{% url 'agregar_tema' id_proyecto=proyecto.id id_acta=acta.id %}">
+                {% csrf_token %}
+                <div class="modal-header">
+                    <h4 class="modal-title">Agregar tema</h4>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-xs-12 m-b-10">
+                            <div class="form-group fg-float">
+                                <div class="fg-line">
+                                    <input id="nombre_tema" maxlength="50" type="text" name="titulo-tema" class="form-control fg-input">
+                                </div>
+                                <label class="fg-label">Nombre del tema</label>
                             </div>
-                            <label class="fg-label">Nombre del tema</label>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-sm-12">
+                            <h5>Discusión</h5>
+                            <div class="fg-line">
+                                <div id="descripcion-tema" class="summernote" ></div>
+                                <input type="hidden" name="descripcion-tema-input" id="descripcion-tema-input"/>
+                            </div>
                         </div>
                     </div>
                 </div>
-                <div class="row">
-                    <div class="col-sm-12">
-                        <h5>Discusión</h5>
-                        <div class="fg-line">
-                            <div id="descripcion_tema" class="summernote" ></div>
-                        </div>
-                    </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-link waves-effect" data-dismiss="modal">Cancelar</button>
+                    <button type="submit" id="agregar_tema" name="agregar_tema" class="btn bgm-blue waves-effect">Agregar</button>
                 </div>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-link waves-effect" data-dismiss="modal" onclick="javascript: $('.note-editable').text('');">Cancelar</button>
-                <button type="button" id="agregar_tema" name="agregar_tema" class="btn bgm-blue waves-effect">Agregar</button>
-            </div>
+            </form>
         </div>
     </div>
 </div>

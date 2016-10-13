@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 from django.shortcuts import render
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, render, redirect
 from django.http import HttpResponseRedirect, HttpResponse
 from django.core.urlresolvers import reverse
 from models import *
@@ -17,20 +17,25 @@ reload(sys)
 sys.setdefaultencoding('utf8')
 
 #Funcion V2.0
-def ir_detalle_proyecto(request, id_proyecto, acta_id = None):
+def ir_detalle_proyecto(request, id_proyecto, id_acta = None):
     #Variables para el panel
     proyecto = Proyecto.objects.get(id=id_proyecto)
     listas_actas = Acta.objects.filter(proyecto_acta=Proyecto.objects.get(id=id_proyecto)).order_by('fecha_acta')
     usuarios_proyecto = Usuario_Proyecto.objects.filter(proyecto=proyecto)
 
-    if not acta_id:
+    if not id_acta:
         try:
             acta = listas_actas[0]
             acta_seleccionada = acta.id
         except KeyError:
             acta = None
             acta_seleccionada = None
-
+        except IndexError:
+            acta = None
+            acta_seleccionada = None
+    else:
+        acta = Acta.objects.get(id=int(id_acta))
+        acta_seleccionada = acta.id
     #Capturamos todos los compromisos activos (no eliminados)
     elementos_activos = []
     numeraciones = []
@@ -89,3 +94,50 @@ def ir_detalle_proyecto(request, id_proyecto, acta_id = None):
         'acta' : acta
     }
     return render(request, 'walo-template/proyectos/reuniones/panel_proyecto.html', data)
+
+
+@login_required(login_url='/index/')
+def agregar_acta(request, id_proyecto):
+    proyecto_acta = Proyecto.objects.get(id=id_proyecto)
+    acta_id = None
+    if request.method == 'POST':
+        #Agregamos el acta
+        if request.POST.get('agregar_acta_fecha'):
+            fecha_acta = datetime.datetime.strptime(request.POST.get('agregar_acta_fecha'), '%d/%m/%Y').strftime('%Y-%m-%d')
+        else:
+            fecha_acta = None
+        resumen_acta = request.POST.get('agregar_acta_resumen')
+        nueva_acta = Acta(proyecto_acta=proyecto_acta, fecha_acta=fecha_acta, resumen_acta=resumen_acta).save()
+        acta = Acta.objects.get(id=Acta.objects.latest('id').id)
+        acta_id = acta.id
+
+        #Por cada miembro, añadimos usuario_acta
+        miembros_presentes = request.POST.getlist('agregar_acta_miembros_presentes')
+        miembros_proyecto = Usuario_Proyecto.objects.filter(proyecto=proyecto_acta)
+        for miembro in miembros_proyecto:
+            presente = False
+            secretario = False
+            usuario = Usuario.objects.get(user=miembro.usuario.user)
+            if str(usuario.id) in miembros_presentes:
+                #Solo si estuvo presente, puede ser secretario
+                presente = True
+            if request.user == usuario.user: #El usuario logueado se deja como secretario del acta
+                secretario = True
+            usuario_acta=Usuario_Acta(usuario=usuario, acta=acta, presente=presente, secretario=secretario)
+            usuario_acta.save()
+    return redirect('ver_panel_proyecto', id_proyecto=id_proyecto, id_acta=acta_id)
+
+@login_required(login_url='/index/')
+def agregar_tema(request, id_proyecto, id_acta):
+    proyecto_acta = Proyecto.objects.get(id=id_proyecto)
+    acta = Acta.objects.get(id=id_acta)
+    if request.method == 'POST':
+        #Se agrega el tema
+        titulo_tema = request.POST.get('titulo-tema')
+        descripcion_tema = request.POST.get('descripcion-tema-input')
+        tema = Tema.objects.create(
+            acta_tema = acta,
+            titulo_tema = titulo_tema,
+            descripcion_tema = descripcion_tema
+        )
+    return redirect('ver_panel_proyecto', id_proyecto=id_proyecto, id_acta=id_acta)

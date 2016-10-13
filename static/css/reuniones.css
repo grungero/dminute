@@ -42,9 +42,8 @@
 }
 
 .panel-nueva-reunion {
-    border-color: cadetblue;
-    background-color: darkturquoise;
-    font-weight: bold;
+
+    margin-top: 20px;
 }
 
 .panel-nueva-reunion .panel-body{
@@ -53,6 +52,7 @@
 
 .detalle-reunion .detalle-reunion-asistentes{
   float:right;
+  width: 140px;
 }
 
 .titulo-tema{
@@ -65,4 +65,14 @@
 
 .compromiso-tema-d{
   margin-top: 15px;
+}
+
+.botones-agregar-reunion{
+    float: right;
+    margin-bottom: 15px;
+    margin-right: 15px;
+}
+
+.block-header{
+    margin-top: 25px;
 }

@@ -804,8 +804,8 @@ def filtrar_elementos(request, id_proyecto):
         print(exc_type, fname, exc_tb.tb_lineno)
 
 @login_required(login_url='/index/')
-def ver_panel_proyecto(request, id_proyecto):
-    return ir_detalle_proyecto(request, id_proyecto)
+def ver_panel_proyecto(request, id_proyecto, id_acta = None):
+    return ir_detalle_proyecto(request, id_proyecto, id_acta)
     #return ir_panel_proyecto(request, id_proyecto, "ninguna", None)
 
 @login_required(login_url='/index/')
